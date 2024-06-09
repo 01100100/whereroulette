@@ -74,3 +74,14 @@ npm run build
 The site is hosted using [GitHub Pages](https://pages.github.com/). A GitHub action bundles the site and deploys all content in the `app/dist` subdirectory for the `main` branch.
 
 The site gets deployed to [https://whereroulette.com](https://whereroulette.com).
+
+
+## Analytics
+
+The site uses [Umami](https://umami.is/) for privacy-focused analytics. This requires the script `src/assets/analytics.js` to be included in the distributed bundle.
+
+To update the script, run the following command:
+
+```bash
+curl https://umani.fly.dev/script.js -o src/assets/analytics.js
+```

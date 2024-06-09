@@ -1,0 +1,41 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "This tool solves the problem of choosing a place to go, when you need somewhere to meet with friends, but the somewhere isn't that important.",
+  "main": "webpack.config.js",
+  "scripts": {
+    "build": "webpack",
+    "serve": "webpack serve --open"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/01100100/whereroulette.git"
+  },
+  "author": "David Whittingham <davidwhittingham94@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/01100100/whereroulette/issues"
+  },
+  "homepage": "https://whereroulette.com",
+  "devDependencies": {
+    "copy-webpack-plugin": "^12.0.2",
+    "css-loader": "^7.1.1",
+    "favicons-webpack-plugin": "^6.0.1",
+    "html-loader": "^5.0.0",
+    "html-webpack-plugin": "^5.6.0",
+    "markdown-loader": "^8.0.0",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.4.5",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.0.4"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.5.2",
+    "@fortawesome/free-solid-svg-icons": "^6.5.2",
+    "@maplibre/maplibre-gl-geocoder": "^1.5.0",
+    "geojson": "^0.5.0",
+    "maplibre-gl": "^4.5.0",
+    "osmtogeojson": "^3.0.0-beta.5"
+  }
+}

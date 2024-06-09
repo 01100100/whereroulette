@@ -1,0 +1,31 @@
+# TODO
+
+- [x] Set up DNS for stats subdomain.
+- [x] Update screenshots to WhereRoulette logo.
+- [x] Add a favicon.
+- [x] Add a button to spin the wheel.
+- [] Add filter for different types of POIs.
+- [] Handle settlement types with no polygon types.
+- [] Improve logo, no AI weirdness and put "Where Roulette" in the number places.
+- [x] Add sound effect of roulette wheel spinning.
+- [x] Add animation for picking the random point.
+- [] Improve FAQs and use another word for POIs.
+- [] Ensure the selected circle is on the top layer.
+- [] Add behavior to geocoder controller so enter selects first result.
+- [x] Change the flyTo behavior to add some padding
+- [] Change flyTo to not be canceled on screen interaction.
+- [] set the TS types properly which are now any.
+- [] Optimize og:image dimensions.
+- [] Add screenshots.
+- [] Add /stats which showing off how many spins have been made.
+- [] rig the spin so that it favours places in the middle.
+- [] Add interactions to the circles.
+- [] Add info for the selected circle.
+- [] Add url parsing for sharing.
+- [] Add link to directions with OSM
+- [] Add a selected-info component.
+- [] Add other categories to filter by.
+- [] Add close button to the info-container.
+- [] Add directions with [maplibre-gl-directions](https://maplibre.org/maplibre-gl-directions) [https://github.com/maplibre/maplibre-gl-directions](https://github.com/maplibre/maplibre-gl-directions)
+- [] Add distance.
+
