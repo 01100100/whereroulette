@@ -1,0 +1,19 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "This tool solves the problem of choosing a place to go, when you need somewhere to meet with friends, but the somewhere isn't that important.",
+  "main": "webpack.config.js",
+  "scripts": {
+    "build": "webpack",
+    "serve": "webpack serve --open"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/01100100/whereroulette.git"
+  },
+  "author": "David Whittingham <davidwhittingham94@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/01100100/whereroulette/issues"
+  },
+  "homepage": "https://whereroulette.com"
+}
