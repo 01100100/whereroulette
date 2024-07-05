@@ -10,7 +10,7 @@ WhereRoulette is a web application designed to randomly select a [point of inter
     * Cafe
 1. Define the area you want to search in:
     * Search by district name
-    <!-- * Search by central point and radius
+    * Search by central point and radius
     * Search by bounding box
     * Search by the equidistance between your and your friends' locations -->
 1. Data is fetched from OpenStreetMap and displayed on the map.

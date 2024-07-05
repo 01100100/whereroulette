@@ -2,28 +2,24 @@
 <html lang="en">
 
 <head>
-  <title>WhereRoulette 🗺️</title>
+  <title>WhereRoulette</title>
   <!-- Metadata -->
-  <meta name="description" content="WhereRoulette helps you choose a place to meet! 🌍 Powered by OSM ❤️ ">
+  <meta name="description" content="WhereRoulette helps you choose a place to meet! 🌍 Powered by OSM ❤️‍🔥">
   <!-- Open Graph Meta Tags -->
   <meta property="og:url" content="https://www.whereroulette.com">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Kreuzungen 🗺️">
-  <meta property="og:description" content="Reveal the waterways that shape your adventures!">
-  <meta property="og:image" content="<%= 'https://www.whereroulette.com/' + require('./assets/screenshot.png') %>" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:image"
-    content="<%= 'https://www.whereroulette.com/' + require('./assets/smallscreenshot.jpg') %>" />
+  <meta property="og:title" content="WhereRoulette">
+  <meta property="og:description" content="WhereRoulette helps you choose a place to meet! 🌍 Powered by OSM ❤️‍🔥">
+  <meta property="og:image" content="<%= 'https://www.whereroulette.com/' + require('./assets/logo.png') %>" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <!-- Twitter Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">
   <meta property="twitter:domain" content="whereroulette.com">
   <meta property="twitter:url" content="https://www.whereroulette.com">
-  <meta name="twitter:title" content="Kreuzungen 🗺️">
-  <meta name="twitter:description" content="Reveal the waterways that shape your adventures!">
-  <meta name="twitter:image" content="<%= 'https://www.whereroulette.com/' + require('./assets/screenshot.png') %>">
+  <meta name="twitter:title" content="WhereRoulette">
+  <meta name="twitter:description" content="WhereRoulette helps you choose a place to meet! 🌍 Powered by OSM ❤️‍🔥">
+  <meta name="twitter:image" content="<%= 'https://www.whereroulette.com/' + require('./assets/logo.png') %>">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
@@ -70,6 +66,21 @@
       padding: 5px 5px;
     }
 
+    @media screen and (max-width: 640px) {
+      .info-container {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: min(80%, 348px);
+      }
+
+    }
+
+    .help-message {
+      max-height: 100%;
+      overflow-y: auto;
+    }
+
     .faq-container {
       position: absolute;
       top: 10px;
@@ -102,6 +113,21 @@
       border-radius: 3px;
       padding: 5px 5px;
     }
+
+    .flash-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      transition: opacity 1s;
+      opacity: 1;
+    }
   </style>
   <!-- External stylesheets and scripts -->
   <link href='https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css' rel='stylesheet' />
@@ -109,32 +135,34 @@
 
 <body>
   <div id="map">
-    <div id="faq" class="faq-container" style="display: none;">
-      <%= require('./faq.md') %>
-    </div>
     <div id="info" class="info-container">
       <div class="help-message">
-        <h2 style="text-align: center">Welcome! 🌍🎰</h2>
+        <h2 style="text-align: center">Welcome! 👋</h2>
         <p>
-          <strong>WhereRoulette</strong> helps you choose a place to meet! 🌍
+          <strong>WhereRoulette</strong> helps you choose a place to meet!
           <br>
         <ol>
-          <li>Select a region and <strong>SPIN THE WHEEL!</strong>
+          <li>Select a region using the search
+          </li>
+          <li> <strong>SPIN THE WHEEL!</strong>
           </li>
           </li>
           <li> Share the results with the share button <i class="fas fa-share-nodes"></i>
           </li>
-          <li>
-            For <strong>more information</strong> click on FAQ button <i class="fas fa-question"></i>
-          </li>
         </ol>
-        </p>
 
         <h5 style="text-align: center">
-          ❤️ Powered by data from
-          <a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a>
+          ❤️ Powered by data from <a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a>
           ❤️
         </h5>
+        </p>
+        <p>
+          For <strong>more information</strong> click on the ❓ FAQ button <i class="fas fa-question"></i>
+        </p>
+      </div>
+
+      <div id="faq" class="faq-container" style="display: none;">
+        <%= require('./faq.md') %>
       </div>
     </div>
     <div id="source" class="source-container"></div>

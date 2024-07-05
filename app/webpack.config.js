@@ -1,5 +1,6 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const SaveRemoteFilePlugin = require('save-remote-file-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const FaviconsWebpackPlugin = require('favicons-webpack-plugin')
 const path = require('path');
 
 module.exports = {
@@ -51,16 +52,14 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: './src/index.html',
-      favicon: './src/assets/favicon.ico',
       inject: true,
     }),
-    new SaveRemoteFilePlugin([
-      {
-        url: 'https://stats.kreuzungen.world/script.js',
-        filepath: 'analytics.js',
-        hash: false,
-      },
-    ]),
+    new CopyWebpackPlugin({
+      patterns: [
+        'src/assets/analytics.js'
+      ]
+    }),
+    new FaviconsWebpackPlugin('./src/assets/logo.png')
   ],
   output: {
     filename: '[name].bundle.js',
