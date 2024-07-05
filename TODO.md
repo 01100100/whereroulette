@@ -1,7 +1,23 @@
 # TODO
 
-- [] Set up DNS for auth subdomain
-- [] Improve logo, half globe, half roulette wheel from above.
+- [x] Set up DNS for stats subdomain.
+- [x] Update screenshots to WhereRoulette logo.
+- [x] Add a favicon.
+- [] Add a button to spin the wheel.
+- [] Add filter for different types of POIs.
+- [] Handle settlement types with no polygon types.
+- [] Improve logo, no AI weirdness and put where roulette in the number places.
 - [] Add sound effect of roulette wheel spinning.
-- [] Add animation for picking the random point.
+- [x] Add animation for picking the random point.
 - [] Improve FAQs and use another word for POIs.
+- [] Ensure the selected circle is on the top layer.
+- [] Add behavior to geocoder controller so enter selects first result.
+- [] Change the flyTo behavior to add some padding.
+- [] set the TS types properly which are now any.
+- [] Optimize og:image dimensions.
+- [] add screenshots.
+- [] add /stats which showing off how many spins have been made.
+- [] rig the spin so that it favours places in the middle.
+- [] Add interactions to the circles.
+- [] Add info for the selected circle.
+- [] Add url parsing for sharing.
