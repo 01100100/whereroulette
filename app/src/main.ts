@@ -91,6 +91,15 @@ geocoderControl.on('result', async (event: any) => {
     return;
   }
 
+  // remove focus the input field to hide the keyboard on mobile
+  const inputElement = document.getElementsByClassName('maplibregl-ctrl-geocoder--input')[0];
+  if (inputElement instanceof HTMLElement) {
+    inputElement.blur();
+    await (300) // wait for the Map resize to finish after the keyboard is hidden
+  } else {
+    console.error('Element not found or is not an HTMLElement');
+  }
+
   displayBoundaryOnMap(event.result.geometry)
   pubs = await fetchPubsInRelation(event.result.properties.osm_id);
   displayPointsOnMap(pubs)

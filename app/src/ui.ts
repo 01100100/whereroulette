@@ -1,11 +1,41 @@
 import { library, icon } from "@fortawesome/fontawesome-svg-core";
 import { faQuestion, faShareNodes, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import maplibregl from "maplibre-gl";
 
 // register the icons with the library for future use
 library.add(faQuestion, faShareNodes, faSpinner);
 
 // state variable to keep track of which container is currently displayed
 export let currentlyDisplayedContainer: "faq" | "info" | null = "info";
+
+export class CustomAttributionControl extends maplibregl.AttributionControl {
+  _toggleAttribution = () => {
+    if (this._container.classList.contains("maplibregl-compact")) {
+      if (this._container.classList.contains("maplibregl-compact-show")) {
+        this._container.setAttribute("open", "");
+        this._container.classList.remove("maplibregl-compact-show");
+      } else {
+        this._container.classList.add("maplibregl-compact-show");
+        this._container.removeAttribute("open");
+      }
+    }
+  };
+
+  _updateCompactMinimize = () => {
+    if (this._container.classList.contains("maplibregl-compact")) {
+      if (this._container.classList.contains("maplibregl-compact-show")) {
+        this._container.classList.remove("maplibregl-compact-show");
+      }
+    }
+  };
+
+  onAdd(map: maplibregl.Map) {
+    const container = super.onAdd(map);
+    container.classList.add("maplibregl-compact");
+    this._map.on("mousedown", this._updateCompactMinimize);
+    return container;
+  }
+}
 
 export class FAQControl {
   _map: any;
