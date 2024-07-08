@@ -5,7 +5,7 @@ import { faQuestion, faShareNodes, faSpinner } from "@fortawesome/free-solid-svg
 library.add(faQuestion, faShareNodes, faSpinner);
 
 // state variable to keep track of which container is currently displayed
-let currentlyDisplayedContainer: "faq" | "info" | null = null;
+export let currentlyDisplayedContainer: "faq" | "info" | null = "info";
 
 export class FAQControl {
   _map: any;
@@ -22,8 +22,7 @@ export class FAQControl {
     button.style.borderRadius = "4px";
     button.onclick = () => {
       if (currentlyDisplayedContainer === 'faq') {
-        hideFAQContainer();
-        showInfo();
+        hideAllContainers();
       } else {
         hideInfo();
         showFAQContainer();
@@ -34,8 +33,6 @@ export class FAQControl {
     this._container.appendChild(button);
     this._map.on("mousedown", () => {
       hideFAQContainer();
-      currentlyDisplayedContainer = null;
-      showInfo();
     });
     return this._container;
   }
@@ -139,7 +136,21 @@ export function showInfo() {
   if (infoContainer) {
     infoContainer.style.display = "flex";
   }
-  currentlyDisplayedContainer === 'info';
+  currentlyDisplayedContainer = 'info';
+}
+
+export function showSpinButton() {
+  const spinButton = document.getElementById("spin-button");
+  if (spinButton) {
+    spinButton.style.display = "block";
+  }
+}
+
+export function hideSpinButton() {
+  const spinButton = document.getElementById("spin-button");
+  if (spinButton) {
+    spinButton.style.display = "none";
+  }
 }
 
 export function hideFAQContainer() {
@@ -155,7 +166,12 @@ export function showFAQContainer() {
     faqContainer.style.display = "block";
     currentlyDisplayedContainer = 'faq';
   }
-  currentlyDisplayedContainer === 'faq';
+}
+
+export function hideAllContainers() {
+  hideInfo();
+  hideFAQContainer();
+  currentlyDisplayedContainer = null;
 }
 
 export function displaySpinner(id: string) {

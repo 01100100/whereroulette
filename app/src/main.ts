@@ -1,20 +1,23 @@
 import { Map } from "maplibre-gl";
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder'
 import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
-import { ShareControl, FAQControl } from "./ui";
-import { FeatureCollection, Geometry } from "geojson";
+import { ShareControl, FAQControl, hideAllContainers, hideInfo, showSpinButton, hideSpinButton, currentlyDisplayedContainer } from "./ui";
+import { FeatureCollection, Feature, Geometry } from "geojson";
 import { fetchPubsInRelation } from "./overpass";
+
+
+let pubs: FeatureCollection;
 
 export const map = new Map({
   container: "map",
   style:
     "https://api.maptiler.com/maps/dataviz-dark/style.json?key=ykqGqGPMAYuYgedgpBOY",
   center: [0, 51.4769], // Greenwich meridian (Center of the World)
-  zoom: 10,
+  zoom: 2,
   maxZoom: 18,
-  minZoom: 5,
-  maxPitch: 85,
+  minZoom: 0,
 });
+
 
 const geocoderApi = {
   forwardGeocode: async (config: { query: string }) => {
@@ -51,20 +54,26 @@ const geocoderApi = {
 
 const geocoderControl = new MaplibreGeocoder(geocoderApi,
   {
-    map,
+    maplibregl: map,
+    marker: false,
     showResultsWhileTyping: true,
     trackProximity: true,
     minLength: 3, // be nice to the geocoder api and only request after 3 chars and 300ms
     debounceSearch: 300,
+    flyTo: {
+      padding: {
+        bottom: 60,
+        top: 5,
+        left: 5,
+        right: 5
+      }
+    },
   }
 )
 
-map.addControl(geocoderControl, "top-right");
-map.addControl(new FAQControl(), "bottom-right");
-map.addControl(new ShareControl("https://whereroulette.com", "Spin the wheel!", "WhereRoulette helps you choose a place to meet! 🌍 Powered by OSM ❤️‍🔥"), "bottom-right");
-
 
 geocoderControl.on('result', async (event: any) => {
+  hideAllContainers()
   // result geo could be a point, polygon, or multiline polygon.
   // In this first version, we will only handle polygons and log the rest... #MVP
   if (event.result.geometry.type !== 'Polygon' && event.result.geometry.type !== 'MultiPolygon') {
@@ -83,13 +92,32 @@ geocoderControl.on('result', async (event: any) => {
   }
 
   displayBoundaryOnMap(event.result.geometry)
-  const pubs = await fetchPubsInRelation(event.result.properties.osm_id);
+  pubs = await fetchPubsInRelation(event.result.properties.osm_id);
   displayPointsOnMap(pubs)
-  // TODO: add a button to give the manual control of spinning the wheel.
-  const selectedPOI = await spinTheWheel(pubs.features.length, pubs);
-  console.log('Selected POI:', pubs.features[selectedPOI]);
-  // TODO: display the selected pub in a popup.
+  showSpinButton();
 });
+
+map.addControl(geocoderControl, "top-right");
+map.addControl(new FAQControl(), "bottom-right");
+map.addControl(new ShareControl("https://whereroulette.com", "Spin the wheel!", "WhereRoulette helps you choose a place to meet! 🌍 Powered by OSM ❤️‍🔥"), "bottom-right");
+
+
+document.getElementById("spin-button")?.addEventListener("click", async () => {
+  if (pubs.features.length === 0) {
+    console.log('No POIs to spin');
+    return;
+  }
+  hideSpinButton();
+  const selectedPOI = await spinTheWheel(pubs.features.length, pubs);
+  console.log('Selected POI:', selectedPOI);
+
+  // moveCircleOnTopLayer() // TODO: find another way of doing this, the reason for it is to ensure that the circle representing the selected POI is on top of the other circle, but this s. 
+})
+
+document.getElementById("info-close-button")?.addEventListener("click", async () => {
+  hideAllContainers();
+})
+
 
 function displayBoundaryOnMap(geometry: Geometry) {
   const layerId = 'selected-item';
@@ -148,18 +176,30 @@ function displayPointsOnMap(fc: FeatureCollection) {
         ['boolean', ['feature-state', 'selected'], false],
         10,
         5
-      ]
-    }
+      ],
+    },
   });
 }
+
+// function moveCircleOnTopLayer(feature: Feature, map: Map) { // remove a single feature from the source and add it back to the source to ensure it is on top of the other features.
+//   const layerId = 'pois';
+//   const source = map.getSource(layerId).updateData()
+//   if (!source) {
+//     console.error('Source not found:', layerId);
+//     return;
+//   }
+//   source.setData(
+//     {}
+//   )
+// }
+
 
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-
-async function spinTheWheel(n: number, fc: FeatureCollection): Promise<number> {
+async function spinTheWheel(n: number, fc: FeatureCollection): Promise<Feature> {
   // This function selects a random number between 1 and n but cycles through the numbers in the same way a roulette wheel does.
   // for the first second it spins fast, then it slows down on every increment by adding a upto 300ms to the delay and stopping when the delay is > 1000ms.
   // initial spin
@@ -186,6 +226,7 @@ async function spinTheWheel(n: number, fc: FeatureCollection): Promise<number> {
     }, {
       selected: true
     });
+    beep()
   }
   delayTime = 30;
 
@@ -205,8 +246,14 @@ async function spinTheWheel(n: number, fc: FeatureCollection): Promise<number> {
     }, {
       selected: true
     });
+    beep()
     delayTime += Math.random() * 300;
   }
+  return fc.features[selected];
+}
 
-  return selected;
+
+function beep() {
+  var snd = new Audio("data:audio/wav;base64,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qJrx4KOQjahZxWbcZgztj2c49nKmkId44S71j0c8eV9yDK6uPRzx5X18eDvjvQ6yKo9ZSS6l//8elePK/Lf//IInrOF/FvDoADYAGBMGb7FtErm5MXMlmPAJQVgWta7Zx2go+8xJ0UiCb8LHHdftWyLJE0QIAIsI+UbXu67dZMjmgDGCGl1H+vpF4NSDckSIkk7Vd+sxEhBQMRU8j/12UIRhzSaUdQ+rQU5kGeFxm+hb1oh6pWWmv3uvmReDl0UnvtapVaIzo1jZbf/pD6ElLqSX+rUmOQNpJFa/r+sa4e/pBlAABoAAAAA3CUgShLdGIxsY7AUABPRrgCABdDuQ5GC7DqPQCgbbJUAoRSUj+NIEig0YfyWUho1VBBBA//uQZB4ABZx5zfMakeAAAAmwAAAAF5F3P0w9GtAAACfAAAAAwLhMDmAYWMgVEG1U0FIGCBgXBXAtfMH10000EEEEEECUBYln03TTTdNBDZopopYvrTTdNa325mImNg3TTPV9q3pmY0xoO6bv3r00y+IDGid/9aaaZTGMuj9mpu9Mpio1dXrr5HERTZSmqU36A3CumzN/9Robv/Xx4v9ijkSRSNLQhAWumap82WRSBUqXStV/YcS+XVLnSS+WLDroqArFkMEsAS+eWmrUzrO0oEmE40RlMZ5+ODIkAyKAGUwZ3mVKmcamcJnMW26MRPgUw6j+LkhyHGVGYjSUUKNpuJUQoOIAyDvEyG8S5yfK6dhZc0Tx1KI/gviKL6qvvFs1+bWtaz58uUNnryq6kt5RzOCkPWlVqVX2a/EEBUdU1KrXLf40GoiiFXK///qpoiDXrOgqDR38JB0bw7SoL+ZB9o1RCkQjQ2CBYZKd/+VJxZRRZlqSkKiws0WFxUyCwsKiMy7hUVFhIaCrNQsKkTIsLivwKKigsj8XYlwt/WKi2N4d//uQRCSAAjURNIHpMZBGYiaQPSYyAAABLAAAAAAAACWAAAAApUF/Mg+0aohSIRobBAsMlO//Kk4soosy1JSFRYWaLC4qZBYWFRGZdwqKiwkNBVmoWFSJkWFxX4FFRQWR+LsS4W/rFRb/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VEFHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAU291bmRib3kuZGUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMjAwNGh0dHA6Ly93d3cuc291bmRib3kuZGUAAAAAAAAAACU=");
+  snd.play();
 }
