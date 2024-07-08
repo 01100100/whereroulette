@@ -28,4 +28,5 @@
 - [] Add close button to the info-container.
 - [] Add directions with [maplibre-gl-directions](https://maplibre.org/maplibre-gl-directions) [https://github.com/maplibre/maplibre-gl-directions](https://github.com/maplibre/maplibre-gl-directions)
 - [] Add distance.
-
+- [x] Hide the keyboard on phone when something is selected. [https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/blur](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/blur)
+- [] Add loading location spinner.

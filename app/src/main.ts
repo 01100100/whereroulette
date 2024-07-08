@@ -1,7 +1,7 @@
 import { Map } from "maplibre-gl";
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder'
 import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
-import { ShareControl, FAQControl, hideAllContainers, hideInfo, showSpinButton, hideSpinButton, currentlyDisplayedContainer } from "./ui";
+import { ShareControl, FAQControl, hideAllContainers, hideInfo, showSpinButton, hideSpinButton, currentlyDisplayedContainer, CustomAttributionControl } from "./ui";
 import { FeatureCollection, Feature, Geometry } from "geojson";
 import { fetchPubsInRelation } from "./overpass";
 
@@ -16,6 +16,7 @@ export const map = new Map({
   zoom: 2,
   maxZoom: 18,
   minZoom: 0,
+  attributionControl: false,
 });
 
 
@@ -63,11 +64,12 @@ const geocoderControl = new MaplibreGeocoder(geocoderApi,
     flyTo: {
       padding: {
         bottom: 60,
-        top: 5,
+        top: 45,
         left: 5,
         right: 5
       }
     },
+    collapsed: true,
   }
 )
 
@@ -90,7 +92,6 @@ geocoderControl.on('result', async (event: any) => {
     // ref) https://wiki.openstreetmap.org/wiki/Relation:boundary#Relation_members
     return;
   }
-
   displayBoundaryOnMap(event.result.geometry)
   pubs = await fetchPubsInRelation(event.result.properties.osm_id);
   displayPointsOnMap(pubs)
@@ -98,6 +99,7 @@ geocoderControl.on('result', async (event: any) => {
 });
 
 map.addControl(geocoderControl, "top-right");
+map.addControl(new CustomAttributionControl({ compact: true }), "bottom-right");
 map.addControl(new FAQControl(), "bottom-right");
 map.addControl(new ShareControl("https://whereroulette.com", "Spin the wheel!", "WhereRoulette helps you choose a place to meet! 🌍 Powered by OSM ❤️‍🔥"), "bottom-right");
 
