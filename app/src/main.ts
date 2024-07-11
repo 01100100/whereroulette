@@ -161,7 +161,17 @@ function displayPointsOnMap(fc: FeatureCollection) {
     map.removeSource(layerId);
   }
 
+  const topLayerId = 'top-layer-pois';
+  if (map.getLayer(topLayerId)) {
+    map.removeLayer(topLayerId);
+    map.removeSource(topLayerId);
+  }
+
   map.addSource(layerId, {
+    type: 'geojson',
+    data: fc,
+  });
+  map.addSource(topLayerId, {
     type: 'geojson',
     data: fc,
   });
@@ -184,29 +194,38 @@ function displayPointsOnMap(fc: FeatureCollection) {
         '#000000'
       ],
       // set the size to be conditional on the feature-state selected value 
-      "circle-radius": [
+      "circle-radius": 5
+    },
+  });
+  map.addLayer({
+    id: topLayerId,
+    type: 'circle',
+    source: topLayerId,
+    paint: {
+      // set the color based on the id of the feature in the FeatureCollection
+      'circle-color': [
+        'match',
+        ['%', ['id'], 7],
+        0, '#ffd700',
+        1, '#ffb14e',
+        2, '#fa8775',
+        3, '#ea5f94',
+        4, '#cd34b5',
+        5, '#9d02d7',
+        6, '#0000ff',
+        '#000000'
+      ],
+      // set the size to be conditional on the feature-state selected value 
+      "circle-radius": 10,
+      "circle-opacity": [
         "case",
         ['boolean', ['feature-state', 'selected'], false],
-        10,
-        5
+        1,
+        0
       ],
     },
   });
 }
-
-// function moveCircleOnTopLayer(feature: Feature, map: Map) { // remove a single feature from the source and add it back to the source to ensure it is on top of the other features.
-//   const layerId = 'pois';
-//   const source = map.getSource(layerId).updateData()
-//   if (!source) {
-//     console.error('Source not found:', layerId);
-//     return;
-//   }
-//   source.setData(
-//     {}
-//   )
-// }
-
-
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -224,9 +243,13 @@ async function spinTheWheel(n: number, fc: FeatureCollection): Promise<Feature> 
   const animate = async (time: number) => {
     const elapsed = time - lastFrameTime;
     if (elapsed > delayTime) {
-      map.setFeatureState({ source: 'pois', id: selected }, { selected: false });
+      map.setFeatureState({
+        source: 'top-layer-pois', id: selected
+      }, { selected: false });
       selected = (selected + 1) % n;
-      map.setFeatureState({ source: 'pois', id: selected }, { selected: true });
+      map.setFeatureState({
+        source: 'top-layer-pois', id: selected
+      }, { selected: true });
       pop();
       lastFrameTime = time;
       delayTime += Math.random() * delayTime; // Increase delay exponentially to slow down the spin

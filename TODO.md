@@ -10,7 +10,7 @@
 - [x] Add sound effect of roulette wheel spinning.
 - [x] Add animation for picking the random point.
 - [] Improve FAQs and use another word for POIs.
-- [] Ensure the selected circle is on the top layer.
+- [x] Ensure the selected circle is on the top layer.
 - [] Add behavior to geocoder controller so enter selects first result.
 - [x] Change the flyTo behavior to add some padding
 - [] Change flyTo to not be canceled on screen interaction.
