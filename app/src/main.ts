@@ -28,8 +28,9 @@ const geocoderApi = {
     // Other properties are optional and can be used in further processing.
     const features = [];
     try {
-      // featureType=settlement
-      const request = `https://nominatim.openstreetmap.org/search?q=${config.query}&format=geojson&polygon_geojson=1&featureType=settlement&limit=5`;
+      // featureType=settlement returns any human inhabited feature from 'state' down to 'neighbourhood'.
+      // ref: https://nominatim.org/release-docs/develop/api/Search/#result-restriction
+      const request = `https://nominatim.openstreetmap.org/search?q=${config.query}&format=geojson&polygon_geojson=1&featureType=settlement&limit=15`;
       const response = await fetch(request);
       const geojson = await response.json();
       for (const feature of geojson.features) {
@@ -70,6 +71,13 @@ const geocoderControl = new MaplibreGeocoder(geocoderApi,
       }
     },
     collapsed: true,
+    // A filter to only list features that are a polygon or a multipolygon
+    // This filters out many of the results from nominatim that are points or lines.
+    // The app is not yet ready to handle these types of geometries.
+    // TODO: accommodate other geometry types
+    filter: (carmen_geojson: any) => {
+      return (carmen_geojson.geometry.type === 'Polygon' || carmen_geojson.geometry.type === 'MultiPolygon')
+    },
   }
 )
 
