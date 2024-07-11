@@ -210,54 +210,35 @@ function delay(ms: number): Promise<void> {
 }
 
 async function spinTheWheel(n: number, fc: FeatureCollection): Promise<Feature> {
-  // This function selects a random number between 1 and n but cycles through the numbers in the same way a roulette wheel does.
-  // for the first second it spins fast, then it slows down on every increment by adding a upto 300ms to the delay and stopping when the delay is > 1000ms.
-  // initial spin
+  // This function starts with a random feature index between 1 and n. It then cycles through the features in the same way a roulette wheel does.
+  // It initially spins fast, then it slows down exponentially untill it stops.
+  // Every time it stops on a feature, it beeps.
+  let delayTime = 20;
+  let selected = Math.floor(Math.random() * n); // start from a different random feature each time
+  let startTime = performance.now();
+  let lastFrameTime = startTime;
 
-  // Initial delay time should be 1000 ms divided by the number of items
-  let delayTime = Math.floor(1000 / n);
-  let selected = Math.floor(Math.random() * n);
-  console.log('startingIndex:', selected);
-  console.log('delayTime:', delayTime, 'ms');
+  const animate = async (time: number) => {
+    const elapsed = time - lastFrameTime;
+    if (elapsed > delayTime) {
+      map.setFeatureState({ source: 'pois', id: selected }, { selected: false });
+      selected = (selected + 1) % n;
+      map.setFeatureState({ source: 'pois', id: selected }, { selected: true });
+      beep();
+      lastFrameTime = time;
+      delayTime += Math.random() * delayTime; // Increase delay exponentially to slow down the spin
+    }
 
-  // Initial spin through all points
-  for (let i = 0; i < n; i++) {
-    await delay(delayTime);
-    map.setFeatureState({
-      source: 'pois',
-      id: selected,
-    }, {
-      selected: false
-    });
-    selected = (selected + 1) % n;
-    map.setFeatureState({
-      source: 'pois',
-      id: selected,
-    }, {
-      selected: true
-    });
-    beep()
-  }
-  delayTime = 30;
+    if (delayTime < 1250) {
+      requestAnimationFrame(animate);
+    }
+  };
 
-  // Slow down
-  while (delayTime < 1000) {
-    await delay(delayTime);
-    map.setFeatureState({
-      source: 'pois',
-      id: selected,
-    }, {
-      selected: false
-    });
-    selected = (selected + 1) % n;
-    map.setFeatureState({
-      source: 'pois',
-      id: selected,
-    }, {
-      selected: true
-    });
-    beep()
-    delayTime += Math.random() * 300;
+  requestAnimationFrame(animate);
+
+  // Wait for the animation to finish
+  while (delayTime < 1250) {
+    await delay(200); // Small delay to prevent freezing
   }
   return fc.features[selected];
 }
