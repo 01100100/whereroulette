@@ -36,6 +36,7 @@
     "@fortawesome/fontawesome-svg-core": "^6.5.2",
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
     "@maplibre/maplibre-gl-geocoder": "^1.5.0",
+    "@tsparticles/confetti": "^3.5.0",
     "geojson": "^0.5.0",
     "maplibre-gl": "^4.5.0",
     "osmtogeojson": "^3.0.0-beta.5"

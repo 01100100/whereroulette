@@ -4,6 +4,7 @@ import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
 import { ShareControl, FAQControl, hideAllContainers, hideInfo, showSpinButton, hideSpinButton, currentlyDisplayedContainer, CustomAttributionControl } from "./ui";
 import { FeatureCollection, Feature, Geometry } from "geojson";
 import { fetchPubsInRelation } from "./overpass";
+import { confetti } from "@tsparticles/confetti"
 
 
 let pubs: FeatureCollection;
@@ -121,6 +122,7 @@ document.getElementById("spin-button")?.addEventListener("click", async () => {
   const selectedPOI = await spinTheWheel(pubs.features.length, pubs);
   console.log('Selected POI:', selectedPOI);
   fanfare();
+  celebrate();
 
   // moveCircleOnTopLayer() // TODO: find another way of doing this, the reason for it is to ensure that the circle representing the selected POI is on top of the other circle, but this s. 
 })
@@ -242,6 +244,36 @@ async function spinTheWheel(n: number, fc: FeatureCollection): Promise<Feature> 
     await delay(200); // Small delay to prevent freezing
   }
   return fc.features[selected];
+}
+
+function celebrate() {
+  const defaults = {
+    spread: 360,
+    ticks: 100,
+    gravity: 0,
+    decay: 0.94,
+    startVelocity: 30,
+    shapes: ["heart"],
+    colors: ["FFC0CB", "FF69B4", "FF1493", "C71585"],
+  };
+
+  confetti({
+    ...defaults,
+    particleCount: 50,
+    scalar: 2,
+  });
+
+  confetti({
+    ...defaults,
+    particleCount: 25,
+    scalar: 3,
+  });
+
+  confetti({
+    ...defaults,
+    particleCount: 10,
+    scalar: 4,
+  });
 }
 
 

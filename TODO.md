@@ -30,3 +30,5 @@
 - [] Add distance.
 - [x] Hide the keyboard on phone when something is selected. [https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/blur](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/blur)
 - [] Add loading location spinner.
+- [] Handle when there are no results for a area.
+- [x] Add confetti
