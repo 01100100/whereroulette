@@ -1,0 +1,46 @@
+diff --git a/node_modules/@maplibre/maplibre-gl-geocoder/lib/index.js b/node_modules/@maplibre/maplibre-gl-geocoder/lib/index.js
+index 6511a65..c174ca3 100644
+--- a/node_modules/@maplibre/maplibre-gl-geocoder/lib/index.js
++++ b/node_modules/@maplibre/maplibre-gl-geocoder/lib/index.js
+@@ -348,9 +348,9 @@ MaplibreGeocoder.prototype = {
+     icon.setAttribute(
+       "class",
+       "mapboxgl-ctrl-geocoder--icon mapboxgl-ctrl-geocoder--icon-" +
+-        name +
+-        " maplibregl-ctrl-geocoder--icon maplibregl-ctrl-geocoder--icon-" +
+-        name
++      name +
++      " maplibregl-ctrl-geocoder--icon maplibregl-ctrl-geocoder--icon-" +
++      name
+     );
+     icon.setAttribute("viewBox", "0 0 18 18");
+     icon.setAttribute("xml:space", "preserve");
+@@ -477,7 +477,7 @@ MaplibreGeocoder.prototype = {
+   // This can sometimes cause strange behavior as this function is called before our own onKeyDown handler and thus
+   //  we cannot depend on some internal values of the suggestion state like `selected` as those will change or before
+   //  our onKeyDown handler.
+-  _onChange: function () {
++  _onChange: async function () {
+     var selected = this._typeahead.selected;
+ 
+     // If a suggestion was selected
+@@ -504,6 +504,10 @@ MaplibreGeocoder.prototype = {
+             );
+           }
+         } else if (selected.bbox) {
++          // blur the input to minimise the keyboard on mobile devices
++          this._inputEl.blur();
++          // wait for the input to be blurred, such that the map is full screen before fitting bounds
++          await new Promise(resolve => setTimeout(resolve, 100));
+           var bbox = selected.bbox;
+           flyOptions = extend({}, this.options.flyTo);
+           if (this._map) {
+@@ -543,7 +547,7 @@ MaplibreGeocoder.prototype = {
+ 
+       // After selecting a feature, re-focus the textarea and set
+       // cursor at start, and reset the selected feature.
+-      this._inputEl.focus();
++      // this._inputEl.focus();
+       this._inputEl.scrollLeft = 0;
+       this._inputEl.setSelectionRange(0, 0);
+       this.lastSelected = JSON.stringify(selected);
