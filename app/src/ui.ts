@@ -2,7 +2,7 @@ import { library, icon } from "@fortawesome/fontawesome-svg-core";
 import { faQuestion, faShareNodes, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import maplibregl from "maplibre-gl";
 import { Feature, Geometry, GeoJsonProperties } from "geojson";
-import { recenterMapOnRegion, resetselectedFeature } from "./main";
+import { addDirections, recenterMapOnRegion, resetselectedFeature } from "./main";
 
 
 // register the icons with the library for future use
@@ -225,6 +225,17 @@ export function showResults(feature: Feature<Geometry, GeoJsonProperties>) {
   };
   resultsContainer.appendChild(spinAgainButton);
 
+  const directionsButton = document.createElement("button");
+  directionsButton.id = "directions-button";
+  directionsButton.className = "directions-button";
+  directionsButton.innerHTML = "Directions";
+  directionsButton.onclick = () => {
+    addDirections()
+
+  };
+  resultsContainer.appendChild(directionsButton);
+
+
 
 
   // TODO: add share and directions buttons
@@ -344,3 +355,5 @@ export function flashMessage(html: string) {
     }, 1500); // Fade out in milliseconds
   }, 3500); // Displayed solid in milliseconds
 }
+
+

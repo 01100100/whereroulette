@@ -5,10 +5,13 @@ import { ShareControl, FAQControl, hideAllContainers, showSpinButton, hideSpinBu
 import { FeatureCollection, Feature, Geometry, GeoJsonProperties, BBox } from "geojson";
 import { fetchNominatimRelationData, fetchPubsInRelation } from "./overpass";
 import { confetti } from "@tsparticles/confetti"
+import MapLibreGlDirections, { LoadingIndicatorControl } from "@maplibre/maplibre-gl-directions";
 
 let selectedFeatureId: string | null = null;
 let selectedRegion: string | null = null;
 let boundingBox: [number, number, number, number] | null = null;
+let directions: MapLibreGlDirections | null = null;
+let selectedCoordinates: [number, number] | null = null;
 
 function updateUrlWithState() {
   console.log('Updating URL with state selectedFeatureId:', selectedFeatureId, 'selectedRegion:', selectedRegion, 'boundingBox:', boundingBox);
@@ -157,7 +160,27 @@ const geocoderControl = new MaplibreGeocoder(geocoderApi,
 // wait for map to load first
 map.on('load', () => {
   restoreStateFromUrl()
-})
+
+  // Make sure to create a MapLibreGlDirections instance only after the map is loaded
+  // Create an instance of the default class
+  directions = new MapLibreGlDirections(map);
+  console.log('Directions:', directions);
+
+  // Optionally add the standard loading-indicator control
+  map.addControl(new LoadingIndicatorControl(directions));
+});
+
+export function addDirections() {
+  // get the user's location using navigator.geolocation
+  navigator.geolocation.getCurrentPosition((position) => {
+    ;
+    directions?.setWaypoints([
+      [position.coords.longitude, position.coords.latitude],
+      // destination
+      selectedCoordinates as [number, number]
+    ]);
+  })
+}
 
 geocoderControl.on('result', async (event: any) => {
   hideRevealButton();
@@ -207,6 +230,8 @@ document.getElementById("spin-button")?.addEventListener("click", async () => {
   }
   hideSpinButton();
   const selectedPOI = await spinTheWheel(pubs);
+  const coordinates = (selectedPOI.geometry as GeoJSON.Point).coordinates;
+  selectedCoordinates = coordinates as [number, number];
   selectedFeatureId = selectedPOI.properties?.id;
   updateUrlWithState();
   console.log('Selected POI:', selectedPOI?.properties?.name);
@@ -224,6 +249,8 @@ document.getElementById("reveal-button")?.addEventListener("click", async () => 
   }
   hideRevealButton();
   const selectedPOI = await spinTheRiggedWheel(selectedFeatureId, pubs);
+  const coordinates = (selectedPOI.geometry as GeoJSON.Point).coordinates;
+  selectedCoordinates = coordinates as [number, number];
   console.log('Selected POI:', selectedPOI.properties?.name);
   reveal(selectedPOI)
 })
