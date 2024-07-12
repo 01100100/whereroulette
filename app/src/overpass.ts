@@ -1,4 +1,5 @@
 import { parseOSMToGeoJSON } from "./geo";
+import { bbox } from "@turf/bbox";
 
 export async function fetchOverpassData(
   overpassQuery: string
@@ -33,4 +34,22 @@ export async function fetchPubsInRelation(relationID: number) {
     }
   });
   return fc;
+}
+
+export async function fetchNominatimRelationData(relationID: number) {
+  const request = `https://nominatim.openstreetmap.org/details?osmtype=R&osmid=${relationID}&format=json&polygon_geojson=1`;
+  const response = await fetch(request);
+  const feature = await response.json();
+  console.log(feature);
+  const carmen_geojson = {
+    type: 'Feature',
+    geometry: feature.geometry,
+    place_name: feature.names.name,
+    text: feature.names.name,
+    place_type: ['place'],
+    bbox: bbox(feature.geometry, { recompute: true }) as [number, number, number, number],
+    // TODO: put all other felids in feature.properties
+    properties: feature
+  };
+  return carmen_geojson;
 }

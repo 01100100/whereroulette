@@ -66,8 +66,32 @@
       padding: 5px 5px;
     }
 
+
+    .results-container {
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      top: 10px;
+      max-height: calc(100% - 30px);
+      left: 10px;
+      max-width: calc(100% - 69px);
+      z-index: 1;
+      background-color: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      margin: 0;
+      border-radius: 3px;
+      padding: 5px 5px;
+    }
+
     @media screen and (max-width: 640px) {
       .info-container {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: min(calc(200% - 10px), 348px);
+      }
+
+      .results-container {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
@@ -155,6 +179,32 @@
       text-decoration: none;
     }
 
+    .reveal-button {
+      display: none;
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translate(-50%);
+      width: 50%;
+      text-align: center;
+      z-index: 1;
+      background-image: linear-gradient(to right, #DA22FF 0%, #9733EE 51%, #DA22FF 100%);
+      background-size: 200% auto;
+      color: white;
+      box-shadow: 0 0 5px 3px #eee;
+      margin: 0;
+      border: none;
+      border-radius: 3px;
+      padding: 5px 5px;
+      cursor: pointer;
+    }
+
+    .reveal-button:hover {
+      background-position: right center;
+      color: #fff;
+      text-decoration: none;
+    }
+
 
     .maplibregl-ctrl-geocoder {
       width: calc(100% - 20px) !important;
@@ -175,6 +225,7 @@
 <body>
   <div id="map">
     <button id="spin-button" class="spin-button">SPIN THE WHEEL!</button>
+    <button id="reveal-button" class="reveal-button">REVAL THE CHOSEN ONE!</button>
     <div id="info" class="info-container">
       <div class="help-message">
         <h2 style="text-align: center">Welcome! 👋</h2>

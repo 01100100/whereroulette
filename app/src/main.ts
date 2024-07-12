@@ -1,11 +1,83 @@
 import { Map } from "maplibre-gl";
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder'
 import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
-import { ShareControl, FAQControl, hideAllContainers, hideInfo, showSpinButton, hideSpinButton, currentlyDisplayedContainer, CustomAttributionControl } from "./ui";
-import { FeatureCollection, Feature, Geometry } from "geojson";
-import { fetchPubsInRelation } from "./overpass";
+import { ShareControl, FAQControl, hideAllContainers, showSpinButton, hideSpinButton, CustomAttributionControl, showResults, hideRevealButton, showRevealButton } from "./ui";
+import { FeatureCollection, Feature, Geometry, GeoJsonProperties, BBox } from "geojson";
+import { fetchNominatimRelationData, fetchPubsInRelation } from "./overpass";
 import { confetti } from "@tsparticles/confetti"
 
+let selectedFeatureId: string | null = null;
+let selectedRegion: string | null = null;
+let boundingBox: [number, number, number, number] | null = null;
+
+function updateUrlWithState() {
+  console.log('Updating URL with state selectedFeatureId:', selectedFeatureId, 'selectedRegion:', selectedRegion, 'boundingBox:', boundingBox);
+  const queryParams = new URLSearchParams(window.location.search);
+  if (selectedFeatureId) {
+    queryParams.set('id', selectedFeatureId);
+  } else {
+    console.error('No selected feature ID found');
+    queryParams.delete('id');
+  }
+  if (selectedRegion) {
+    queryParams.set('region', selectedRegion);
+  } else {
+    queryParams.delete('region');
+  }
+
+  // Update the URL without reloading the page
+  window.history.replaceState(null, '', '?' + queryParams.toString());
+}
+
+// Function to read state from URL and restore it
+async function restoreStateFromUrl() {
+  const queryParams = new URLSearchParams(window.location.search);
+  selectedFeatureId = queryParams.get('id');
+  selectedRegion = queryParams.get('region');
+
+  if (selectedRegion) {
+    // Find and selectedRegion based on realtionship ID
+    const area = await fetchNominatimRelationData(Number(selectedRegion));
+
+    boundingBox = area.bbox;
+    if (boundingBox) {
+      recenterMapOnRegion();
+    }
+    const pubs = await processArea(area);
+    if (selectedFeatureId) {
+      // get some user input to avoid the error: `Autoplay is only allowed when approved by the user, the site is activated by the user, or media is muted.`
+      // The play method is not allowed by the user agent or the platform in the current context, possibly because the user denied permission.
+      // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play
+
+      // set selected featureId to state such that the button can use in in spintheRiggedWheel
+      selectedFeatureId = selectedFeatureId;
+      showRevealButton()
+
+    } else {
+      showSpinButton()
+    }
+  }
+}
+
+export function resetselectedFeature() {
+  selectedFeatureId = null;
+  updateUrlWithState();
+}
+
+export function recenterMapOnRegion() {
+  if (!boundingBox) {
+    console.error('No bounding box found for the selected region');
+    return;
+  }
+  map.fitBounds(boundingBox, {
+    padding: {
+      bottom: 60,
+      top: 45,
+      left: 5,
+      right: 5
+    }
+  });
+}
 
 let pubs: FeatureCollection;
 
@@ -82,14 +154,25 @@ const geocoderControl = new MaplibreGeocoder(geocoderApi,
   }
 )
 
+// wait for map to load first
+map.on('load', () => {
+  restoreStateFromUrl()
+})
 
 geocoderControl.on('result', async (event: any) => {
+  hideRevealButton();
+  hideSpinButton();
+  resetselectedFeature();
+  processArea(event.result);
+  showSpinButton();
+});
+
+async function processArea(carmen: any): Promise<FeatureCollection<Geometry, GeoJsonProperties>> {
   hideAllContainers()
   // result geo could be a point, polygon, or multiline polygon.
   // In this first version, we will only handle polygons and log the rest... #MVP
-  if (event.result.geometry.type !== 'Polygon' && event.result.geometry.type !== 'MultiPolygon') {
-    console.log('Unsupported geometry type:', event.result.geometry.type);
-    console.log('Result:', event.result);
+  if (carmen.geometry.type !== 'Polygon' && carmen.geometry.type !== 'MultiPolygon') {
+    console.log('Unsupported geometry type:', carmen.geometry.type);
     // TODO: support other geometry types
     //
     // sometimes a point is returned for a OSM node that is the center of a type=boundary relation.
@@ -99,18 +182,22 @@ geocoderControl.on('result', async (event: any) => {
     // The center node is a "admin_centre" of the relation https://www.openstreetmap.org/relation/62422
     // TODO: understand why nominatim returns only the center node.
     // ref) https://wiki.openstreetmap.org/wiki/Relation:boundary#Relation_members
-    return;
+    return {} as FeatureCollection<Geometry, GeoJsonProperties>;
   }
-  displayBoundaryOnMap(event.result.geometry)
-  pubs = await fetchPubsInRelation(event.result.properties.osm_id);
-  displayPointsOnMap(pubs)
-  showSpinButton();
-});
+  boundingBox = carmen.bbox;
+  displayBoundaryOnMap(carmen.geometry)
+  selectedRegion = carmen.properties.osm_id;
+  updateUrlWithState();
+  pubs = await fetchPubsInRelation(carmen.properties.osm_id);
+  displayPointsOnMap(pubs);
+  return pubs;
+}
 
+const shareControl = new ShareControl("https://whereroulette.com", "Spin the wheel!", "WhereRoulette helps you choose a place to meet! 🌍 Powered by OSM ❤️‍🔥")
 map.addControl(geocoderControl, "top-right");
 map.addControl(new CustomAttributionControl({ compact: true }), "bottom-right");
 map.addControl(new FAQControl(), "bottom-right");
-map.addControl(new ShareControl("https://whereroulette.com", "Spin the wheel!", "WhereRoulette helps you choose a place to meet! 🌍 Powered by OSM ❤️‍🔥"), "bottom-right");
+map.addControl(shareControl, "bottom-right");
 
 
 document.getElementById("spin-button")?.addEventListener("click", async () => {
@@ -119,12 +206,26 @@ document.getElementById("spin-button")?.addEventListener("click", async () => {
     return;
   }
   hideSpinButton();
-  const selectedPOI = await spinTheWheel(pubs.features.length, pubs);
-  console.log('Selected POI:', selectedPOI);
-  fanfare();
-  celebrate();
+  const selectedPOI = await spinTheWheel(pubs);
+  selectedFeatureId = selectedPOI.properties?.id;
+  updateUrlWithState();
+  console.log('Selected POI:', selectedPOI?.properties?.name);
+  reveal(selectedPOI)
+})
 
-  // moveCircleOnTopLayer() // TODO: find another way of doing this, the reason for it is to ensure that the circle representing the selected POI is on top of the other circle, but this s. 
+document.getElementById("reveal-button")?.addEventListener("click", async () => {
+  if (selectedFeatureId === null) {
+    console.log('No feature selected to reveal');
+    return;
+  }
+  if (pubs.features.length === 0) {
+    console.log('No POIs to spin');
+    return;
+  }
+  hideRevealButton();
+  const selectedPOI = await spinTheRiggedWheel(selectedFeatureId, pubs);
+  console.log('Selected POI:', selectedPOI.properties?.name);
+  reveal(selectedPOI)
 })
 
 document.getElementById("info-close-button")?.addEventListener("click", async () => {
@@ -133,6 +234,7 @@ document.getElementById("info-close-button")?.addEventListener("click", async ()
 
 
 function displayBoundaryOnMap(geometry: Geometry) {
+  console.log("Displaying boundary on map")
   const layerId = 'selected-item';
   if (map.getLayer(layerId)) {
     map.removeLayer(layerId);
@@ -227,14 +329,25 @@ function displayPointsOnMap(fc: FeatureCollection) {
   });
 }
 
+
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function spinTheWheel(n: number, fc: FeatureCollection): Promise<Feature> {
+async function spinTheWheel(fc: FeatureCollection): Promise<Feature> {
+  map.zoomIn({ duration: 10000 });
+  // clear the selected state of all features
+  fc.features.forEach(feature => {
+    map.setFeatureState({
+      source: 'top-layer-pois', id: feature.id
+    }, { selected: false });
+  });
+
+
   // This function starts with a random feature index between 1 and n. It then cycles through the features in the same way a roulette wheel does.
   // It initially spins fast, then it slows down exponentially untill it stops.
   // Every time it stops on a feature, it beeps.
+  let n = fc.features.length;
   let delayTime = 20;
   let selected = Math.floor(Math.random() * n); // start from a different random feature each time
   let startTime = performance.now();
@@ -269,6 +382,23 @@ async function spinTheWheel(n: number, fc: FeatureCollection): Promise<Feature> 
   return fc.features[selected];
 }
 
+async function spinTheRiggedWheel(osmId: string, fc: FeatureCollection): Promise<Feature<Geometry, GeoJsonProperties>> {
+  await spinTheWheel(fc);
+  const riggedResult = fc.features.find(feature => feature.properties?.id === osmId) as Feature<Geometry, GeoJsonProperties>;
+  // set the feature-state and turn off the selected state for all other features
+  await delay(1000)
+  fc.features.forEach(feature => {
+    map.setFeatureState({
+      source: 'top-layer-pois', id: feature.id
+    }, { selected: false });
+  });
+  map.setFeatureState({
+    source: 'top-layer-pois', id: riggedResult.id
+  }, { selected: true });
+  pop();
+  return riggedResult;
+}
+
 function celebrate() {
   const defaults = {
     spread: 360,
@@ -297,6 +427,26 @@ function celebrate() {
     particleCount: 10,
     scalar: 4,
   });
+}
+
+async function reveal(selectedFeature: Feature<Geometry, GeoJsonProperties>): Promise<any> {
+  if (!selectedFeature) {
+    console.error("No feature selected");
+    return;
+  }
+  fanfare();
+  celebrate();
+  // show the info from the selected feature in the info container, add a button for directions or sharing.
+  hideAllContainers();
+  showResults(selectedFeature);
+  console.log(selectedFeature)
+  if (selectedFeature.geometry.type === 'Point') {
+    const coordinates = selectedFeature.geometry.coordinates
+    map.flyTo({
+      center: coordinates as [number, number],
+      screenSpeed: 0.05,
+    });
+  }
 }
 
 

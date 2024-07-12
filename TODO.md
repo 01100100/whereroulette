@@ -20,15 +20,17 @@
 - [] Add /stats which showing off how many spins have been made.
 - [] rig the spin so that it favours places in the middle.
 - [] Add interactions to the circles.
-- [] Add info for the selected circle.
-- [] Add url parsing for sharing.
+- [x] Add info for the selected circle.
+- [x] Add url parsing for sharing.
 - [] Add link to directions with OSM
-- [] Add a selected-info component.
+- [x] Add a results-info component.
 - [] Add other categories to filter by.
-- [] Add close button to the info-container.
+- [x] Add close button to the info-container.
 - [] Add directions with [maplibre-gl-directions](https://maplibre.org/maplibre-gl-directions) [https://github.com/maplibre/maplibre-gl-directions](https://github.com/maplibre/maplibre-gl-directions)
 - [] Add distance.
 - [x] Hide the keyboard on phone when something is selected. [https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/blur](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/blur)
 - [] Add loading location spinner.
 - [] Handle when there are no results for a area.
 - [x] Add confetti
+- [] Add call to action when there are no results in the geocoder to fix things on OSM
+- [] Add call to action when there are no results for the filter to add things to OSM

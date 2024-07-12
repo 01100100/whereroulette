@@ -1,12 +1,15 @@
 import { library, icon } from "@fortawesome/fontawesome-svg-core";
 import { faQuestion, faShareNodes, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import maplibregl from "maplibre-gl";
+import { Feature, Geometry, GeoJsonProperties } from "geojson";
+import { recenterMapOnRegion, resetselectedFeature } from "./main";
+
 
 // register the icons with the library for future use
 library.add(faQuestion, faShareNodes, faSpinner);
 
 // state variable to keep track of which container is currently displayed
-export let currentlyDisplayedContainer: "faq" | "info" | null = "info";
+export let currentlyDisplayedContainer: "faq" | "info" | "results" | null = "info";
 
 export class CustomAttributionControl extends maplibregl.AttributionControl {
   _toggleAttribution = () => {
@@ -54,7 +57,7 @@ export class FAQControl {
       if (currentlyDisplayedContainer === 'faq') {
         hideAllContainers();
       } else {
-        hideInfo();
+        hideAllContainers();
         showFAQContainer();
       }
     };
@@ -78,18 +81,12 @@ export class ShareControl {
   // if not available, it copies a shareable url to the clipboard
   _map: any;
   _container!: HTMLDivElement;
-  private _shareableUrl: string;
   private _shareableTitle: string;
   private _shareableDescription: string;
 
   constructor(shareableUrl: string, shareableTitle: string, shareableDescription: string) {
-    this._shareableUrl = shareableUrl;
     this._shareableTitle = shareableTitle;
     this._shareableDescription = shareableDescription;
-  }
-
-  setShareableUrl(url: string) {
-    this._shareableUrl = url;
   }
 
   setShareableTitle(title: string) {
@@ -110,11 +107,12 @@ export class ShareControl {
     shareButton.title = "Share";
     shareButton.style.borderRadius = "4px";
     shareButton.onclick = async () => {
+      const currentUrl = window.location.href;
       if (navigator.share) {
         navigator
           .share({
             title: this._shareableTitle,
-            url: this._shareableUrl,
+            url: currentUrl,
             text: this._shareableDescription,
           })
           .then(() => {
@@ -123,10 +121,10 @@ export class ShareControl {
           .catch(console.error);
       } else {
         navigator.clipboard
-          .writeText(this._shareableUrl)
+          .writeText(currentUrl)
           .then(() => {
-            console.log("Url copied to clipboard: " + this._shareableUrl);
-            flashMessage(`Url Copied to clipboard! 🪩 <a href="${this._shareableUrl}" target="_blank">${this._shareableUrl}</a>`)
+            console.log("Url copied to clipboard: " + currentUrl);
+            flashMessage(`Url Copied to clipboard! 🪩 <a href="${currentUrl}" target="_blank">${currentUrl}</a>`)
           })
           .catch((err) => {
             console.error("Unable to copy URL to clipboard", err);
@@ -169,6 +167,91 @@ export function showInfo() {
   currentlyDisplayedContainer = 'info';
 }
 
+export function showResults(feature: Feature<Geometry, GeoJsonProperties>) {
+  // make a container and add it to the dom
+  const resultsContainer = document.createElement("div");
+  resultsContainer.id = "results";
+  resultsContainer.className = "results-container";
+  resultsContainer.style.display = "block";
+  // {
+  //   "type": "Feature",
+  //   "id": 15,
+  //   "properties": {
+  //     "amenity": "pub",
+  //     "name": "The Pond House",
+  //     "opening_hours": "Mo-Th 12:00-23:00, Fr,Sa 12:00-24:00, Su 12:00-22:30",
+  //     "wheelchair": "yes",
+  //     "id": "node/318562248"
+  //   },
+  //   "geometry": {
+  //     "type": "Point",
+  //     "coordinates": [
+  //       -1.008412,
+  //       51.4601031
+  //     ]
+  //   }
+  // }
+  // TODO: display this nicely
+  const featureProperties = feature.properties;
+  if (!featureProperties) {
+    console.error("Feature properties not found");
+    return;
+  }
+  const featureName = featureProperties.name;
+  const featureAmenity = featureProperties.amenity;
+  const featureOpeningHours = featureProperties.opening_hours;
+  const featureId = featureProperties.id;
+  const featureDetails = document.createElement("div");
+  featureDetails.className = "feature-details";
+  featureDetails.innerHTML = `
+    <h2>${featureName}</h2>
+    <p>Type: ${featureAmenity}</p>
+    `
+    + (featureOpeningHours ? `<p>Opening Hours: ${featureOpeningHours}</p>` : "")
+    + `
+    <p>OSM: <a href="https://www.openstreetmap.org/${featureId}" target="_blank">https://www.openstreetmap.org/${featureId}</a></p>
+  `;
+  resultsContainer.appendChild(featureDetails);
+
+  const spinAgainButton = document.createElement("button");
+  spinAgainButton.id = "spin-button";
+  spinAgainButton.className = "spin-again-button";
+  spinAgainButton.innerHTML = "Spin Again";
+  spinAgainButton.onclick = () => {
+    resetselectedFeature();
+    recenterMapOnRegion();
+    hideAllContainers();
+    showSpinButton();
+  };
+  resultsContainer.appendChild(spinAgainButton);
+
+
+
+  // TODO: add share and directions buttons
+  const shareButton = document.createElement("button");
+  shareButton.id = "share-button";
+  shareButton.className = "share-button";
+  shareButton.innerHTML = "Share";
+  shareButton.onclick = () => {
+
+  };
+
+
+  const mapContainer = document.getElementById("map");
+  if (mapContainer) {
+    mapContainer.appendChild(resultsContainer);
+    currentlyDisplayedContainer = 'results';
+  }
+}
+
+export function hideResults() {
+  const resultsContainer = document.getElementById("results");
+  if (resultsContainer) {
+    resultsContainer.remove();
+
+  }
+}
+
 export function showSpinButton() {
   const spinButton = document.getElementById("spin-button");
   if (spinButton) {
@@ -180,6 +263,20 @@ export function hideSpinButton() {
   const spinButton = document.getElementById("spin-button");
   if (spinButton) {
     spinButton.style.display = "none";
+  }
+}
+
+export function showRevealButton() {
+  const revealButton = document.getElementById("reveal-button");
+  if (revealButton) {
+    revealButton.style.display = "block";
+  }
+}
+
+export function hideRevealButton() {
+  const revealButton = document.getElementById("reveal-button");
+  if (revealButton) {
+    revealButton.style.display = "none";
   }
 }
 
@@ -201,6 +298,7 @@ export function showFAQContainer() {
 export function hideAllContainers() {
   hideInfo();
   hideFAQContainer();
+  hideResults();
   currentlyDisplayedContainer = null;
 }
 
