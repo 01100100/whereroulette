@@ -2,8 +2,7 @@ import { library, icon } from "@fortawesome/fontawesome-svg-core";
 import { faQuestion, faShareNodes, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import maplibregl from "maplibre-gl";
 import { Feature, Geometry, GeoJsonProperties } from "geojson";
-import { recenterMapOnRegion, resetselectedFeature } from "./main";
-
+import { updateSelectedCategory, reload } from "./main";
 
 // register the icons with the library for future use
 library.add(faQuestion, faShareNodes, faSpinner);
@@ -37,6 +36,107 @@ export class CustomAttributionControl extends maplibregl.AttributionControl {
     container.classList.add("maplibregl-compact");
     this._map.on("mousedown", this._updateCompactMinimize);
     return container;
+  }
+}
+
+export class FilterControl {
+  // filter button (filter icon) to select the filter option, it displays the current filter using a emoji
+  // when its clicked, it expands to show the rest of the categories emojis and when a different filter is clicked, it updates the selectedCategory value in ./main.ts, minimizes with the updated emoji displayed
+  _map: any;
+  _container!: HTMLDivElement;
+  _hiddenEmojiContainer!: HTMLDivElement;
+  _categories: { [key: string]: { tag: string; emoji: string } };
+  private _selectedEmoji: string;
+  private _isFilterExpanded: boolean = false;
+
+  constructor(categories: { [key: string]: { tag: string; emoji: string } }) {
+    this._categories = categories;
+    // Initialize with the first category's emoji
+    this._selectedEmoji = Object.values(categories)[0].emoji;
+  }
+
+  onAdd(map: any) {
+    this._map = map;
+    this._container = document.createElement("div");
+    this._container.className = "maplibregl-ctrl maplibregl-ctrl-group";
+    const button = document.createElement("button");
+    button.id = "filter-button";
+    button.type = "button";
+    button.title = "Filter";
+    button.style.borderRadius = "4px";
+    button.onclick = () => {
+      if (this._isFilterExpanded) {
+        this.minimizeFilterControl();
+      } else {
+        this.expandFilterControl();
+      }
+    };
+    const emojiTextNode = document.createTextNode(this._selectedEmoji);
+    button.appendChild(emojiTextNode);
+    this._container.appendChild(button);
+    this._map.on("mousedown", () => {
+      if (this._isFilterExpanded) {
+        this.minimizeFilterControl();
+      }
+    });
+    return this._container;
+  }
+
+  updateFilterControlIcon(category: string) {
+    this._selectedEmoji = this._categories[category].emoji;
+    this.updateFilterControl();
+  }
+
+
+  updateAndMinimizeFilterControl(category: string) {
+    this._selectedEmoji = this._categories[category].emoji;
+    updateSelectedCategory(category);
+    this.updateFilterControl();
+    this.minimizeFilterControl();
+  }
+
+  minimizeFilterControl() {
+    if (this._hiddenEmojiContainer) {
+      this._hiddenEmojiContainer.remove();
+    }
+    this._isFilterExpanded = false;
+  }
+
+  updateFilterControl() {
+    const button = document.getElementById("filter-button");
+    if (!button) {
+      console.error("Filter button not found");
+      return;
+    }
+    button.textContent = this._selectedEmoji;
+  }
+
+  expandFilterControl() {
+    this._isFilterExpanded = true;
+    this._hiddenEmojiContainer = document.createElement("div");
+    this._hiddenEmojiContainer.id = "hidden-emoji-container";
+    this._container.prepend(this._hiddenEmojiContainer);
+    Object.entries(this._categories).forEach(([key, { emoji }]) => {
+      if (emoji === this._selectedEmoji) {
+        return;
+      }
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = emoji;
+      button.onclick = () => {
+        console.log(`Expanded filter button clicked: ${emoji}`);
+        this._selectedEmoji = emoji;
+        this.updateAndMinimizeFilterControl(key);
+      };
+      this._hiddenEmojiContainer.appendChild(button);
+    });
+  }
+
+  onRemove() {
+    if (this._container.parentNode) {
+      this._container.parentNode.removeChild(this._container);
+    }
+    this._map = undefined;
   }
 }
 
@@ -168,30 +268,10 @@ export function showInfo() {
 }
 
 export function showResults(feature: Feature<Geometry, GeoJsonProperties>) {
-  // make a container and add it to the dom
   const resultsContainer = document.createElement("div");
   resultsContainer.id = "results";
   resultsContainer.className = "results-container";
   resultsContainer.style.display = "block";
-  // {
-  //   "type": "Feature",
-  //   "id": 15,
-  //   "properties": {
-  //     "amenity": "pub",
-  //     "name": "The Pond House",
-  //     "opening_hours": "Mo-Th 12:00-23:00, Fr,Sa 12:00-24:00, Su 12:00-22:30",
-  //     "wheelchair": "yes",
-  //     "id": "node/318562248"
-  //   },
-  //   "geometry": {
-  //     "type": "Point",
-  //     "coordinates": [
-  //       -1.008412,
-  //       51.4601031
-  //     ]
-  //   }
-  // }
-  // TODO: display this nicely
   const featureProperties = feature.properties;
   if (!featureProperties) {
     console.error("Feature properties not found");
@@ -218,13 +298,9 @@ export function showResults(feature: Feature<Geometry, GeoJsonProperties>) {
   spinAgainButton.className = "spin-again-button";
   spinAgainButton.innerHTML = "Spin Again";
   spinAgainButton.onclick = () => {
-    resetselectedFeature();
-    recenterMapOnRegion();
-    hideAllContainers();
-    showSpinButton();
+    reload();
   };
   resultsContainer.appendChild(spinAgainButton);
-
 
 
   // TODO: add share and directions buttons
@@ -344,3 +420,4 @@ export function flashMessage(html: string) {
     }, 1500); // Fade out in milliseconds
   }, 3500); // Displayed solid in milliseconds
 }
+

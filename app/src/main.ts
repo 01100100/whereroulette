@@ -1,22 +1,32 @@
 import { Map } from "maplibre-gl";
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder'
 import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
-import { ShareControl, FAQControl, hideAllContainers, showSpinButton, hideSpinButton, CustomAttributionControl, showResults, hideRevealButton, showRevealButton } from "./ui";
-import { FeatureCollection, Feature, Geometry, GeoJsonProperties, BBox } from "geojson";
-import { fetchNominatimRelationData, fetchPubsInRelation } from "./overpass";
+import { ShareControl, FAQControl, hideAllContainers, showSpinButton, hideSpinButton, CustomAttributionControl, showResults, hideRevealButton, showRevealButton, FilterControl } from "./ui";
+import { FeatureCollection, Feature, Geometry, GeoJsonProperties } from "geojson";
+import { fetchNominatimRelationData, fetchPoisInRelation } from "./overpass";
 import { confetti } from "@tsparticles/confetti"
 
 let selectedFeatureId: string | null = null;
 let selectedRegion: string | null = null;
 let boundingBox: [number, number, number, number] | null = null;
+// default selectedCategory is drinks
+let selectedCategory: string = "drinks";
+
+export const categories: { [key: string]: { tag: string; emoji: string } } = {
+  "drinks": { "tag": '"amenity"~"pub|bar|biergarten"', "emoji": "🍺" },
+  "cafe": { "tag": '"amenity"~"cafe"', "emoji": "☕" },
+  "food": { "tag": '"amenity"~"restaurant|fast_food|food_court|ice_cream"', "emoji": "🍴" },
+  "park": { "tag": '"leisure"~"park|garden"', "emoji": "🌳" },
+
+}
+
 
 function updateUrlWithState() {
-  console.log('Updating URL with state selectedFeatureId:', selectedFeatureId, 'selectedRegion:', selectedRegion, 'boundingBox:', boundingBox);
+  console.log('Updating URL with state selectedFeatureId:', selectedFeatureId, 'selectedRegion:', selectedRegion, "type:", selectedCategory);
   const queryParams = new URLSearchParams(window.location.search);
   if (selectedFeatureId) {
     queryParams.set('id', selectedFeatureId);
   } else {
-    console.error('No selected feature ID found');
     queryParams.delete('id');
   }
   if (selectedRegion) {
@@ -24,7 +34,11 @@ function updateUrlWithState() {
   } else {
     queryParams.delete('region');
   }
-
+  if (selectedCategory) {
+    queryParams.set('type', selectedCategory);
+  } else {
+    queryParams.delete('type');
+  }
   // Update the URL without reloading the page
   window.history.replaceState(null, '', '?' + queryParams.toString());
 }
@@ -34,34 +48,52 @@ async function restoreStateFromUrl() {
   const queryParams = new URLSearchParams(window.location.search);
   selectedFeatureId = queryParams.get('id');
   selectedRegion = queryParams.get('region');
+  // check if the type object is a key in the categories object and if not use the default value and log an error
+  // check for a type parameter in the URL and if not use the default value and log an error
+  if (queryParams.has('type')) {
+    const type = queryParams.get('type');
+    if (type && categories[type]) {
+      selectedCategory = type;
+    } else {
+      console.error('Invalid type parameter in URL:', type);
+    }
+  }
+  filterControl.updateFilterControlIcon(selectedCategory);
 
   if (selectedRegion) {
-    // Find and selectedRegion based on realtionship ID
-    const area = await fetchNominatimRelationData(Number(selectedRegion));
-
-    boundingBox = area.bbox;
-    if (boundingBox) {
-      recenterMapOnRegion();
-    }
-    const pubs = await processArea(area);
+    pois = await fetchPoisForCurrentArea();
     if (selectedFeatureId) {
       // get some user input to avoid the error: `Autoplay is only allowed when approved by the user, the site is activated by the user, or media is muted.`
       // The play method is not allowed by the user agent or the platform in the current context, possibly because the user denied permission.
       // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play
 
-      // set selected featureId to state such that the button can use in in spintheRiggedWheel
-      selectedFeatureId = selectedFeatureId;
-      showRevealButton()
-
+      // check if feature is not in pois
+      const feature = pois.features.find(feature => feature.properties?.id === selectedFeatureId);
+      if (feature) {
+        showRevealButton()
+      } else {
+        console.error('Feature not found in POIs:', selectedFeatureId);
+        showSpinButton()
+      }
     } else {
       showSpinButton()
     }
   }
 }
 
+
+async function fetchPoisForCurrentArea(): Promise<FeatureCollection> {
+  const area = await fetchNominatimRelationData(Number(selectedRegion));
+  boundingBox = area.bbox;
+  if (boundingBox) {
+    recenterMapOnRegion();
+  }
+  const pois = await processArea(area);
+  return pois;
+}
+
 export function resetselectedFeature() {
   selectedFeatureId = null;
-  updateUrlWithState();
 }
 
 export function recenterMapOnRegion() {
@@ -79,7 +111,7 @@ export function recenterMapOnRegion() {
   });
 }
 
-let pubs: FeatureCollection;
+let pois: FeatureCollection;
 
 export const map = new Map({
   container: "map",
@@ -162,7 +194,11 @@ map.on('load', () => {
 geocoderControl.on('result', async (event: any) => {
   hideRevealButton();
   hideSpinButton();
+  clearBoundary();
+  clearPoints();
+  selectedRegion = event.result.properties.osm_id;
   resetselectedFeature();
+  updateUrlWithState();
   processArea(event.result);
   showSpinButton();
 });
@@ -187,10 +223,10 @@ async function processArea(carmen: any): Promise<FeatureCollection<Geometry, Geo
   boundingBox = carmen.bbox;
   displayBoundaryOnMap(carmen.geometry)
   selectedRegion = carmen.properties.osm_id;
-  updateUrlWithState();
-  pubs = await fetchPubsInRelation(carmen.properties.osm_id);
-  displayPointsOnMap(pubs);
-  return pubs;
+  console.log('Fetching pois for category:', selectedCategory, categories[selectedCategory].emoji);
+  pois = await fetchPoisInRelation(carmen.properties.osm_id, selectedCategory);
+  displayPointsOnMap(pois);
+  return pois;
 }
 
 const shareControl = new ShareControl("https://whereroulette.com", "Spin the wheel!", "WhereRoulette helps you choose a place to meet! 🌍 Powered by OSM ❤️‍🔥")
@@ -198,15 +234,17 @@ map.addControl(geocoderControl, "top-right");
 map.addControl(new CustomAttributionControl({ compact: true }), "bottom-right");
 map.addControl(new FAQControl(), "bottom-right");
 map.addControl(shareControl, "bottom-right");
+const filterControl = new FilterControl(categories);
+map.addControl(filterControl, "bottom-right");
 
 
 document.getElementById("spin-button")?.addEventListener("click", async () => {
-  if (pubs.features.length === 0) {
+  if (pois.features.length === 0) {
     console.log('No POIs to spin');
     return;
   }
   hideSpinButton();
-  const selectedPOI = await spinTheWheel(pubs);
+  const selectedPOI = await spinTheWheel(pois);
   selectedFeatureId = selectedPOI.properties?.id;
   updateUrlWithState();
   console.log('Selected POI:', selectedPOI?.properties?.name);
@@ -218,12 +256,12 @@ document.getElementById("reveal-button")?.addEventListener("click", async () => 
     console.log('No feature selected to reveal');
     return;
   }
-  if (pubs.features.length === 0) {
+  if (pois.features.length === 0) {
     console.log('No POIs to spin');
     return;
   }
   hideRevealButton();
-  const selectedPOI = await spinTheRiggedWheel(selectedFeatureId, pubs);
+  const selectedPOI = await spinTheRiggedWheel(selectedFeatureId, pois);
   console.log('Selected POI:', selectedPOI.properties?.name);
   reveal(selectedPOI)
 })
@@ -234,7 +272,7 @@ document.getElementById("info-close-button")?.addEventListener("click", async ()
 
 
 function displayBoundaryOnMap(geometry: Geometry) {
-  console.log("Displaying boundary on map")
+  console.log("Displaying boundary on map... 🗺️")
   const layerId = 'selected-item';
   if (map.getLayer(layerId)) {
     map.removeLayer(layerId);
@@ -254,6 +292,14 @@ function displayBoundaryOnMap(geometry: Geometry) {
       'fill-opacity': 0.2,
     },
   });
+}
+
+function clearBoundary() {
+  const layerId = 'selected-item';
+  if (map.getLayer(layerId)) {
+    map.removeLayer(layerId);
+    map.removeSource(layerId);
+  }
 }
 
 function displayPointsOnMap(fc: FeatureCollection) {
@@ -329,12 +375,26 @@ function displayPointsOnMap(fc: FeatureCollection) {
   });
 }
 
+function clearPoints() {
+  const layerId = 'pois';
+  if (map.getLayer(layerId)) {
+    map.removeLayer(layerId);
+    map.removeSource(layerId);
+  }
+
+  const topLayerId = 'top-layer-pois';
+  if (map.getLayer(topLayerId)) {
+    map.removeLayer(topLayerId);
+    map.removeSource(topLayerId);
+  }
+}
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function spinTheWheel(fc: FeatureCollection): Promise<Feature> {
+  console.log('Spinning the wheel... 🎡');
   map.zoomIn({ duration: 10000 });
   // clear the selected state of all features
   fc.features.forEach(feature => {
@@ -399,6 +459,24 @@ async function spinTheRiggedWheel(osmId: string, fc: FeatureCollection): Promise
   return riggedResult;
 }
 
+export async function updateSelectedCategory(category: string) {
+  if (!categories[category]) {
+    console.error('Invalid category:', category);
+    return;
+  }
+  if (selectedCategory === category) {
+    console.log('Category already selected:', category);
+    return;
+  }
+  selectedCategory = category;
+  console.log('Updating for category:', category);
+  if (selectedRegion) {
+    fullReload()
+  }
+  updateUrlWithState();
+}
+
+
 function celebrate() {
   const defaults = {
     spread: 360,
@@ -429,6 +507,28 @@ function celebrate() {
   });
 }
 
+export function reload() {
+  // Resets the map state to spin the wheel again for the current region
+  console.log('Reloading the wheel ready to spin again... 🔄');
+  hideSpinButton();
+  resetselectedFeature();
+  updateUrlWithState();
+  recenterMapOnRegion();
+  hideAllContainers();
+  showSpinButton();
+}
+
+export async function fullReload() {
+  // Resets the map state and fetches new POIs based on the selectedCategory for the current region
+  console.log('Full Reloading... fetching pois for new category:', categories[selectedCategory].emoji);
+  hideSpinButton();
+  clearPoints();
+  resetselectedFeature();
+  hideAllContainers();
+  pois = await fetchPoisForCurrentArea();
+  showSpinButton();
+}
+
 async function reveal(selectedFeature: Feature<Geometry, GeoJsonProperties>): Promise<any> {
   if (!selectedFeature) {
     console.error("No feature selected");
@@ -436,10 +536,8 @@ async function reveal(selectedFeature: Feature<Geometry, GeoJsonProperties>): Pr
   }
   fanfare();
   celebrate();
-  // show the info from the selected feature in the info container, add a button for directions or sharing.
   hideAllContainers();
   showResults(selectedFeature);
-  console.log(selectedFeature)
   if (selectedFeature.geometry.type === 'Point') {
     const coordinates = selectedFeature.geometry.coordinates
     map.flyTo({
