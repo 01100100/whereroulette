@@ -34,3 +34,17 @@
 - [x] Add confetti
 - [] Add call to action when there are no results in the geocoder to fix things on OSM
 - [] Add call to action when there are no results for the filter to add things to OSM
+- [] set website description based on the selected params.
+- [] Add option to get pois in a radius of current location.
+- [] Add a control to get the current location.
+- [] Add loading spinner for when the data is being fetched.
+- [] Fix bug when the faq control is clicked it doesn't toggle back on the info with the spin again button.
+- [] Add more info for choosen poi:
+    - [] improve the type for non amenity tags.
+    - [] Website
+    - [] Phone number
+    - [] Opening hours
+        - display using opening_hours.js
+- [] Add call to action to add more info to the POI when its incomplete.
+- [ ] When there is an option, divide the area into different neighborhoods. Then, spin for the neighborhood and further spin for the POI. Add cool animations.
+- [] filter out "undefined" results. These are nodes which have no name ect..
