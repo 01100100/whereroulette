@@ -4,7 +4,7 @@
 - [x] Update screenshots to WhereRoulette logo.
 - [x] Add a favicon.
 - [x] Add a button to spin the wheel.
-- [] Add filter for different types of POIs.
+- [x] Add filter for different types of POIs.
 - [] Handle settlement types with no polygon types.
 - [] Improve logo, no AI weirdness and put "Where Roulette" in the number places.
 - [x] Add sound effect of roulette wheel spinning.
@@ -48,3 +48,12 @@
 - [] Add call to action to add more info to the POI when its incomplete.
 - [ ] When there is an option, divide the area into different neighborhoods. Then, spin for the neighborhood and further spin for the POI. Add cool animations.
 - [] filter out "undefined" results. These are nodes which have no name ect..
+- [] Add other types of POI except for Points/Nodes.
+- [] Fix overpass query (right now "public_bookshelf" gets returned from the ).
+- [] Add overature places
+- [] Add overature regions
+- [] Add "open now" option.
+- [] Add more filtering options (eg: cuisine...)
+- [] Add mapillary images for the choosen POI.
+- [] Add [lib.reviews](https://lib.reviews/faq)
+- [] Add way to mute the sound.

@@ -25,7 +25,7 @@ export function pubsInRelationQuery(relationID: number): string {
   return `[out:json];node(area:${relationID + 3600000000})["amenity"="pub"];out geom;`;
 }
 
-export function poisInRelationQuery(relationID: number, poiType: string): string {
+export function poisInRelationQuery(relationID: number, category: string): string {
   // use the categories object to get the correct tag to use in the query
   // export const categories = {
   //   "drinks": { "tag": '"amenity"~"pub|bar|biergarten"', "emoji": "🍺" },
@@ -33,7 +33,7 @@ export function poisInRelationQuery(relationID: number, poiType: string): string
   //   "food": { "tag": '"amenity"~"restaurant|fast_food|food_court|ice_cream"', "emoji": "🍴" },
   //   "parks": { "tag": '"leisure"~"park|garden"', "emoji": "🌳" },
   // }
-  const query = `[out:json];node(area:${relationID + 3600000000})[${categories[poiType].tag}];out geom;`;
+  const query = `[out:json];node(area:${relationID + 3600000000})[${categories[category].tag}];out geom;`;
   return query;
 }
 
@@ -49,8 +49,8 @@ export async function fetchPubsInRelation(relationID: number) {
   return fc;
 }
 
-export async function fetchPoisInRelation(relationID: string, poiType: string) {
-  const query = poisInRelationQuery(parseInt(relationID), poiType);
+export async function fetchPoisInRelation(relationID: string, category: string) {
+  const query = poisInRelationQuery(parseInt(relationID), category);
   const osmData = await fetchOverpassData(query);
   const fc = parseOSMToGeoJSON(osmData)
   fc.features.forEach((feature, index) => {

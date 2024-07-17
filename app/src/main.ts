@@ -7,7 +7,8 @@ import { fetchNominatimRelationData, fetchPoisInRelation } from "./overpass";
 import { confetti } from "@tsparticles/confetti"
 
 let selectedFeatureId: string | null = null;
-let selectedRegion: string | null = null;
+let selectedRegionId: string | null = null;
+let selectedRegionFeature: Feature | null = null;
 let boundingBox: [number, number, number, number] | null = null;
 // default selectedCategory is drinks
 let selectedCategory: string = "drinks";
@@ -22,15 +23,15 @@ export const categories: { [key: string]: { tag: string; emoji: string } } = {
 
 
 function updateUrlWithState() {
-  console.log('Updating URL with state selectedFeatureId:', selectedFeatureId, 'selectedRegion:', selectedRegion, "type:", selectedCategory);
+  console.log('Updating URL with state selectedFeatureId:', selectedFeatureId, 'selectedRegion:', selectedRegionId, "type:", selectedCategory);
   const queryParams = new URLSearchParams(window.location.search);
   if (selectedFeatureId) {
     queryParams.set('id', selectedFeatureId);
   } else {
     queryParams.delete('id');
   }
-  if (selectedRegion) {
-    queryParams.set('region', selectedRegion);
+  if (selectedRegionId) {
+    queryParams.set('region', selectedRegionId);
   } else {
     queryParams.delete('region');
   }
@@ -47,7 +48,7 @@ function updateUrlWithState() {
 async function restoreStateFromUrl() {
   const queryParams = new URLSearchParams(window.location.search);
   selectedFeatureId = queryParams.get('id');
-  selectedRegion = queryParams.get('region');
+  selectedRegionId = queryParams.get('region');
   // check if the type object is a key in the categories object and if not use the default value and log an error
   // check for a type parameter in the URL and if not use the default value and log an error
   if (queryParams.has('type')) {
@@ -60,8 +61,8 @@ async function restoreStateFromUrl() {
   }
   filterControl.updateFilterControlIcon(selectedCategory);
 
-  if (selectedRegion) {
-    pois = await fetchPoisForCurrentArea();
+  if (selectedRegionId) {
+    pois = await fetchPoisForAreaID(Number(selectedRegionId));
     if (selectedFeatureId) {
       // get some user input to avoid the error: `Autoplay is only allowed when approved by the user, the site is activated by the user, or media is muted.`
       // The play method is not allowed by the user agent or the platform in the current context, possibly because the user denied permission.
@@ -82,8 +83,24 @@ async function restoreStateFromUrl() {
 }
 
 
+async function fetchPoisForAreaID(selectedRegionId: number): Promise<FeatureCollection> {
+  const area = await fetchNominatimRelationData(selectedRegionId);
+  boundingBox = area.bbox;
+  if (boundingBox) {
+    recenterMapOnRegion();
+  }
+  const pois = await processArea(area);
+  return pois;
+}
+
 async function fetchPoisForCurrentArea(): Promise<FeatureCollection> {
-  const area = await fetchNominatimRelationData(Number(selectedRegion));
+  if (!selectedRegionFeature) {
+    console.error('No selected region geometry found');
+    return {} as FeatureCollection<Geometry, GeoJsonProperties>;
+  }
+  const area = selectedRegionFeature;
+  // TODO: fix this and don't ignore it!
+  // @ts-ignore
   boundingBox = area.bbox;
   if (boundingBox) {
     recenterMapOnRegion();
@@ -196,7 +213,7 @@ geocoderControl.on('result', async (event: any) => {
   hideSpinButton();
   clearBoundary();
   clearPoints();
-  selectedRegion = event.result.properties.osm_id;
+  selectedRegionId = event.result.properties.osm_id;
   resetselectedFeature();
   updateUrlWithState();
   processArea(event.result);
@@ -205,6 +222,7 @@ geocoderControl.on('result', async (event: any) => {
 
 async function processArea(carmen: any): Promise<FeatureCollection<Geometry, GeoJsonProperties>> {
   hideAllContainers()
+  console.log('Processing area:', carmen.place_name);
   // result geo could be a point, polygon, or multiline polygon.
   // In this first version, we will only handle polygons and log the rest... #MVP
   if (carmen.geometry.type !== 'Polygon' && carmen.geometry.type !== 'MultiPolygon') {
@@ -222,11 +240,20 @@ async function processArea(carmen: any): Promise<FeatureCollection<Geometry, Geo
   }
   boundingBox = carmen.bbox;
   displayBoundaryOnMap(carmen.geometry)
-  selectedRegion = carmen.properties.osm_id;
+  selectedRegionFeature = carmen
+  selectedRegionId = carmen.properties.osm_id;
   console.log('Fetching pois for category:', selectedCategory, categories[selectedCategory].emoji);
   pois = await fetchPoisInRelation(carmen.properties.osm_id, selectedCategory);
   displayPointsOnMap(pois);
   return pois;
+}
+
+async function loadingPoisInRealtion(relationID: string, category: string) {
+  // show loading spinner
+
+  // fetch pois
+  pois = await fetchPoisInRelation(relationID, category)
+  displayPointsOnMap(pois)
 }
 
 const shareControl = new ShareControl("https://whereroulette.com", "Spin the wheel!", "WhereRoulette helps you choose a place to meet! 🌍 Powered by OSM ❤️‍🔥")
@@ -247,8 +274,8 @@ document.getElementById("spin-button")?.addEventListener("click", async () => {
   const selectedPOI = await spinTheWheel(pois);
   selectedFeatureId = selectedPOI.properties?.id;
   updateUrlWithState();
-  console.log('Selected POI:', selectedPOI?.properties?.name);
   reveal(selectedPOI)
+  console.log('Selected POI:', selectedPOI?.properties?.name);
 })
 
 document.getElementById("reveal-button")?.addEventListener("click", async () => {
@@ -262,8 +289,8 @@ document.getElementById("reveal-button")?.addEventListener("click", async () => 
   }
   hideRevealButton();
   const selectedPOI = await spinTheRiggedWheel(selectedFeatureId, pois);
-  console.log('Selected POI:', selectedPOI.properties?.name);
   reveal(selectedPOI)
+  console.log('Selected POI:', selectedPOI.properties?.name);
 })
 
 document.getElementById("info-close-button")?.addEventListener("click", async () => {
@@ -470,8 +497,8 @@ export async function updateSelectedCategory(category: string) {
   }
   selectedCategory = category;
   console.log('Updating for category:', category);
-  if (selectedRegion) {
-    fullReload()
+  if (selectedRegionId) {
+    reload()
   }
   updateUrlWithState();
 }
@@ -507,10 +534,11 @@ function celebrate() {
   });
 }
 
-export function reload() {
+export function resetSpin() {
   // Resets the map state to spin the wheel again for the current region
   console.log('Reloading the wheel ready to spin again... 🔄');
   hideSpinButton();
+  hideRevealButton();
   resetselectedFeature();
   updateUrlWithState();
   recenterMapOnRegion();
@@ -518,10 +546,11 @@ export function reload() {
   showSpinButton();
 }
 
-export async function fullReload() {
+export async function reload() {
   // Resets the map state and fetches new POIs based on the selectedCategory for the current region
   console.log('Full Reloading... fetching pois for new category:', categories[selectedCategory].emoji);
   hideSpinButton();
+  hideRevealButton();
   clearPoints();
   resetselectedFeature();
   hideAllContainers();
@@ -539,6 +568,7 @@ async function reveal(selectedFeature: Feature<Geometry, GeoJsonProperties>): Pr
   hideAllContainers();
   showResults(selectedFeature);
   if (selectedFeature.geometry.type === 'Point') {
+    // TODO: handle other geometries
     const coordinates = selectedFeature.geometry.coordinates
     map.flyTo({
       center: coordinates as [number, number],

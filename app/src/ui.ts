@@ -2,7 +2,7 @@ import { library, icon } from "@fortawesome/fontawesome-svg-core";
 import { faQuestion, faShareNodes, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import maplibregl from "maplibre-gl";
 import { Feature, Geometry, GeoJsonProperties } from "geojson";
-import { updateSelectedCategory, reload } from "./main";
+import { updateSelectedCategory, resetSpin } from "./main";
 
 // register the icons with the library for future use
 library.add(faQuestion, faShareNodes, faSpinner);
@@ -298,7 +298,7 @@ export function showResults(feature: Feature<Geometry, GeoJsonProperties>) {
   spinAgainButton.className = "spin-again-button";
   spinAgainButton.innerHTML = "Spin Again";
   spinAgainButton.onclick = () => {
-    reload();
+    resetSpin();
   };
   resultsContainer.appendChild(spinAgainButton);
 
