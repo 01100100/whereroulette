@@ -14,10 +14,10 @@ let boundingBox: [number, number, number, number] | null = null;
 let selectedCategory: string = "drinks";
 
 export const categories: { [key: string]: { tag: string; emoji: string } } = {
-  "drinks": { "tag": '"amenity"~"pub|bar|biergarten"', "emoji": "🍺" },
-  "cafe": { "tag": '"amenity"~"cafe"', "emoji": "☕" },
-  "food": { "tag": '"amenity"~"restaurant|fast_food|food_court|ice_cream"', "emoji": "🍴" },
-  "park": { "tag": '"leisure"~"park|garden"', "emoji": "🌳" },
+  "drinks": { "tag": 'amenity~"^(pub|bar|biergarten)$"', "emoji": "🍺" },
+  "cafe": { "tag": 'amenity~"^(cafe)$"', "emoji": "☕" },
+  "food": { "tag": 'amenity~"^(restaurant|fast_food|food_court|ice_cream)$"', "emoji": "🍴" },
+  "park": { "tag": 'leisure~"^(park|garden)$"', "emoji": "🌳" },
 
 }
 
