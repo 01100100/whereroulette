@@ -18,7 +18,7 @@ export const categories: { [key: string]: { tag: string; emoji: string } } = {
   "cafe": { "tag": 'amenity~"^(cafe)$"', "emoji": "☕" },
   "food": { "tag": 'amenity~"^(restaurant|fast_food|food_court|ice_cream)$"', "emoji": "🍴" },
   "park": { "tag": 'leisure~"^(park|garden)$"', "emoji": "🌳" },
-
+  "climb": { "tag": 'sport~"^(climbing|bouldering)$"', "emoji": "🧗" }, // TODO: hide this as a option to keep the app simple, expose it in another way.
 }
 
 
