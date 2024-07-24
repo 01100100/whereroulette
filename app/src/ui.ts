@@ -309,6 +309,7 @@ export function showResults(feature: Feature<Geometry, GeoJsonProperties>) {
     featureEmoji = emojiMap[featureType];
   }
   console.log(featureProperties)
+  const featureWebsite = featureProperties.website;
   const featureOpeningHours = featureProperties.opening_hours;
   const featureId = featureProperties.id;
   const featureDetails = document.createElement("div");
@@ -318,6 +319,7 @@ export function showResults(feature: Feature<Geometry, GeoJsonProperties>) {
     <p>Type: ${featureType} ${featureEmoji}</p>
     `
     + (featureOpeningHours ? `<p>Opening Hours: ${featureOpeningHours}</p>` : "")
+    + (featureWebsite ? `<p>Website: <a href="${featureWebsite}" target="_blank">${featureWebsite}</a></p>` : "")
     + `
     <p>OSM: <a href="https://www.openstreetmap.org/${featureId}" target="_blank">https://www.openstreetmap.org/${featureId}</a></p>
   `;
