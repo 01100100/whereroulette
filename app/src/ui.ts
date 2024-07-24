@@ -2,7 +2,7 @@ import { library, icon } from "@fortawesome/fontawesome-svg-core";
 import { faQuestion, faShareNodes, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import maplibregl from "maplibre-gl";
 import { Feature, Geometry, GeoJsonProperties } from "geojson";
-import { updateSelectedCategory, resetSpin } from "./main";
+import { updateSelectedCategory, resetSpin, Category, CategoryDetail } from "./main";
 
 // register the icons with the library for future use
 library.add(faQuestion, faShareNodes, faSpinner);
@@ -61,11 +61,11 @@ export class FilterControl {
   _map: any;
   _container!: HTMLDivElement;
   _hiddenEmojiContainer!: HTMLDivElement;
-  _categories: { [key: string]: { tag: string; emoji: string } };
+  _categories: Record<Category, CategoryDetail>;
   private _selectedEmoji: string;
   private _isFilterExpanded: boolean = false;
 
-  constructor(categories: { [key: string]: { tag: string; emoji: string } }) {
+  constructor(categories: Record<Category, CategoryDetail>) {
     this._categories = categories;
     // Initialize with the first category's emoji
     this._selectedEmoji = Object.values(categories)[0].emoji;
@@ -98,13 +98,13 @@ export class FilterControl {
     return this._container;
   }
 
-  updateFilterControlIcon(category: string) {
+  updateFilterControlIcon(category: Category) {
     this._selectedEmoji = this._categories[category].emoji;
     this.updateFilterControl();
   }
 
 
-  updateAndMinimizeFilterControl(category: string) {
+  updateAndMinimizeFilterControl(category: Category) {
     this._selectedEmoji = this._categories[category].emoji;
     updateSelectedCategory(category);
     this.updateFilterControl();
@@ -142,7 +142,7 @@ export class FilterControl {
       button.onclick = () => {
         console.log(`Expanded filter button clicked: ${emoji}`);
         this._selectedEmoji = emoji;
-        this.updateAndMinimizeFilterControl(key);
+        this.updateAndMinimizeFilterControl(key as Category);
       };
       this._hiddenEmojiContainer.appendChild(button);
     });

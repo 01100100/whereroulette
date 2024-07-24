@@ -1,4 +1,4 @@
-import { Map } from "maplibre-gl";
+import { Map, LngLatBounds } from "maplibre-gl";
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder'
 import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
 import { ShareControl, FAQControl, hideAllContainers, showSpinButton, hideSpinButton, CustomAttributionControl, showResults, hideRevealButton, showRevealButton, FilterControl } from "./ui";
@@ -6,23 +6,37 @@ import { FeatureCollection, Feature, Geometry, GeoJsonProperties } from "geojson
 import { fetchNominatimRelationData, fetchPoisInRelation } from "./overpass";
 import { confetti } from "@tsparticles/confetti"
 
+export enum Category {
+  Drinks = "drinks",
+  Cafe = "cafe",
+  Food = "food",
+  Park = "park",
+  Climb = "climb",
+}
+
+export type CategoryDetail = {
+  tag: string;
+  emoji: string;
+};
+
+
 let selectedFeatureId: string | null = null;
 let selectedRegionId: string | null = null;
 let selectedRegionFeature: Feature | null = null;
 let boundingBox: [number, number, number, number] | null = null;
-// default selectedCategory is drinks
-let selectedCategory: string = "drinks";
+let selectedCategory: Category = Category.Drinks; // default selectedCategory is drinks
 
-export const categories: { [key: string]: { tag: string; emoji: string } } = {
-  "drinks": { "tag": 'amenity~"^(pub|bar|biergarten)$"', "emoji": "🍺" },
-  "cafe": { "tag": 'amenity~"^(cafe)$"', "emoji": "☕" },
-  "food": { "tag": 'amenity~"^(restaurant|fast_food|food_court|ice_cream)$"', "emoji": "🍴" },
-  "park": { "tag": 'leisure~"^(park|garden)$"', "emoji": "🌳" },
-  "climb": { "tag": 'sport~"^(climbing|bouldering)$"', "emoji": "🧗" }, // TODO: hide this as a option to keep the app simple, expose it in another way.
-}
+export const categories: Record<Category, CategoryDetail> = {
+  [Category.Drinks]: { tag: 'amenity~"^(pub|bar|biergarten)$"', emoji: "🍺" },
+  [Category.Cafe]: { tag: 'amenity~"^(cafe)$"', emoji: "☕" },
+  [Category.Food]: { tag: 'amenity~"^(restaurant|fast_food|food_court|ice_cream)$"', emoji: "🍴" },
+  [Category.Park]: { tag: 'leisure~"^(park|garden)$"', emoji: "🌳" },
+  [Category.Climb]: { tag: 'sport~"^(climbing|bouldering)$"', emoji: "🧗" },
+};
 
 
-function updateUrlWithState() {
+
+function updateUrlWithState(): void {
   console.log('Updating URL with state selectedFeatureId:', selectedFeatureId, 'selectedRegion:', selectedRegionId, "type:", selectedCategory);
   const queryParams = new URLSearchParams(window.location.search);
   if (selectedFeatureId) {
@@ -53,8 +67,8 @@ async function restoreStateFromUrl() {
   // check for a type parameter in the URL and if not use the default value and log an error
   if (queryParams.has('type')) {
     const type = queryParams.get('type');
-    if (type && categories[type]) {
-      selectedCategory = type;
+    if (type && categories[type as Category]) {
+      selectedCategory = type as Category;
     } else {
       console.error('Invalid type parameter in URL:', type);
     }
@@ -248,7 +262,7 @@ async function processArea(carmen: any): Promise<FeatureCollection<Geometry, Geo
   return pois;
 }
 
-async function loadingPoisInRealtion(relationID: string, category: string) {
+async function loadingPoisInRealtion(relationID: string, category: Category) {
   // show loading spinner
 
   // fetch pois
@@ -486,7 +500,7 @@ async function spinTheRiggedWheel(osmId: string, fc: FeatureCollection): Promise
   return riggedResult;
 }
 
-export async function updateSelectedCategory(category: string) {
+export async function updateSelectedCategory(category: Category) {
   if (!categories[category]) {
     console.error('Invalid category:', category);
     return;
