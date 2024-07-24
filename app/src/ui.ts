@@ -10,6 +10,22 @@ library.add(faQuestion, faShareNodes, faSpinner);
 // state variable to keep track of which container is currently displayed
 export let currentlyDisplayedContainer: "faq" | "info" | "results" | null = "info";
 
+// TODO: refactor this
+const emojiMap: { [key: string]: string } = {
+  "pub": "🍺",
+  "bar": "🍷",
+  "biergarten": "🍺",
+  "cafe": "☕",
+  "restaurant": "🍽️",
+  "fast_food": "🍔",
+  "food_court": "🍔",
+  "ice_cream": "🍦",
+  "climbing": "🧗",
+  "bouldering": "🧗",
+  "garden": "🌳",
+  "park": "🌳",
+}
+
 export class CustomAttributionControl extends maplibregl.AttributionControl {
   _toggleAttribution = () => {
     if (this._container.classList.contains("maplibregl-compact")) {
@@ -278,14 +294,28 @@ export function showResults(feature: Feature<Geometry, GeoJsonProperties>) {
     return;
   }
   const featureName = featureProperties.name;
-  const featureAmenity = featureProperties.amenity;
+  let featureType: string = ""
+  let featureEmoji: string = ""
+  if (featureProperties.amenity) {
+    featureType = featureProperties.amenity;
+  }
+  else if (featureProperties.sport) {
+    featureType = featureProperties.sport;
+  }
+  else if (featureProperties.leisure) {
+    featureType = featureProperties.leisure;
+  }
+  if (featureType) {
+    featureEmoji = emojiMap[featureType];
+  }
+  console.log(featureProperties)
   const featureOpeningHours = featureProperties.opening_hours;
   const featureId = featureProperties.id;
   const featureDetails = document.createElement("div");
   featureDetails.className = "feature-details";
   featureDetails.innerHTML = `
     <h2>${featureName}</h2>
-    <p>Type: ${featureAmenity}</p>
+    <p>Type: ${featureType} ${featureEmoji}</p>
     `
     + (featureOpeningHours ? `<p>Opening Hours: ${featureOpeningHours}</p>` : "")
     + `
