@@ -30,6 +30,12 @@ export function poisInRelationQuery(relationID: number, category: Category): str
   return query;
 }
 
+export function poisInCircleQuery(center: number[], radiusKilometer: number, category: Category): string {
+  const query = `[out:json];node(around:${radiusKilometer * 1000},${center[1]},${center[0]})[${categories[category].tag}];out geom;`;
+  return query;
+}
+
+
 export async function fetchPubsInRelation(relationID: number) {
   const query = pubsInRelationQuery(relationID);
   const osmData = await fetchOverpassData(query);
@@ -44,6 +50,19 @@ export async function fetchPubsInRelation(relationID: number) {
 
 export async function fetchPoisInRelation(relationID: string, category: Category) {
   const query = poisInRelationQuery(parseInt(relationID), category);
+  const osmData = await fetchOverpassData(query);
+  const fc = parseOSMToGeoJSON(osmData)
+  fc.features.forEach((feature, index) => {
+    if (feature.properties) {
+      feature.id = index;
+    }
+  });
+  return fc;
+}
+
+// TODO: check for a better type to annotate center 
+export async function fetchPoisInCircle(center: number[], radiusKilometer: number, category: Category) {
+  const query = poisInCircleQuery(center, radiusKilometer, category);
   const osmData = await fetchOverpassData(query);
   const fc = parseOSMToGeoJSON(osmData)
   fc.features.forEach((feature, index) => {

@@ -1,10 +1,12 @@
-import { Map, LngLatBounds } from "maplibre-gl";
+import { Map, GeolocateControl } from "maplibre-gl";
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder'
 import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
 import { ShareControl, FAQControl, hideAllContainers, showSpinButton, hideSpinButton, CustomAttributionControl, showResults, hideRevealButton, showRevealButton, FilterControl } from "./ui";
 import { FeatureCollection, Feature, Geometry, GeoJsonProperties } from "geojson";
-import { fetchNominatimRelationData, fetchPoisInRelation } from "./overpass";
+import { fetchNominatimRelationData, fetchPoisInCircle, fetchPoisInRelation } from "./overpass";
 import { confetti } from "@tsparticles/confetti"
+import { circle } from "@turf/circle"
+import bbox from "@turf/bbox";
 
 export enum Category {
   Drinks = "drinks",
@@ -22,6 +24,8 @@ export type CategoryDetail = {
 
 let selectedFeatureId: string | null = null;
 let selectedRegionId: string | null = null;
+let selectedRegionCenter: any | string | null;
+const selectedCircleRadiusKilometers = 3;
 let selectedRegionFeature: Feature | null = null;
 let boundingBox: [number, number, number, number] | null = null;
 let selectedCategory: Category = Category.Drinks; // default selectedCategory is drinks
@@ -37,8 +41,10 @@ export const categories: Record<Category, CategoryDetail> = {
 
 
 function updateUrlWithState(): void {
-  console.log('Updating URL with state selectedFeatureId:', selectedFeatureId, 'selectedRegion:', selectedRegionId, "type:", selectedCategory);
+  console.log('Updating URL with state selectedFeatureId:', selectedFeatureId, 'selectedRegion:', selectedRegionId, "type:", selectedCategory, "selectedRegionCenter:", selectedRegionCenter);
   const queryParams = new URLSearchParams(window.location.search);
+  const params = Object.fromEntries(queryParams.entries());
+  console.log(params)
   if (selectedFeatureId) {
     queryParams.set('id', selectedFeatureId);
   } else {
@@ -54,6 +60,11 @@ function updateUrlWithState(): void {
   } else {
     queryParams.delete('type');
   }
+  if (selectedRegionCenter) {
+    queryParams.set('center', selectedRegionCenter);
+  } else {
+    queryParams.delete('center');
+  }
   // Update the URL without reloading the page
   window.history.replaceState(null, '', '?' + queryParams.toString());
 }
@@ -63,6 +74,7 @@ async function restoreStateFromUrl() {
   const queryParams = new URLSearchParams(window.location.search);
   selectedFeatureId = queryParams.get('id');
   selectedRegionId = queryParams.get('region');
+  selectedRegionCenter = queryParams.get('center')
   // check if the type object is a key in the categories object and if not use the default value and log an error
   // check for a type parameter in the URL and if not use the default value and log an error
   if (queryParams.has('type')) {
@@ -76,7 +88,27 @@ async function restoreStateFromUrl() {
   filterControl.updateFilterControlIcon(selectedCategory);
 
   if (selectedRegionId) {
-    pois = await fetchPoisForAreaID(Number(selectedRegionId));
+    pois = await processOSMAreaRegionID(Number(selectedRegionId));
+    if (selectedFeatureId) {
+      // get some user input to avoid the error: `Autoplay is only allowed when approved by the user, the site is activated by the user, or media is muted.`
+      // The play method is not allowed by the user agent or the platform in the current context, possibly because the user denied permission.
+      // https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play
+
+      // check if feature is not in pois
+      const feature = pois.features.find(feature => feature.properties?.id === selectedFeatureId);
+      if (feature) {
+        showRevealButton()
+      } else {
+        console.error('Feature not found in POIs:', selectedFeatureId);
+        showSpinButton()
+      }
+    } else {
+      showSpinButton()
+    }
+  }
+  if (selectedRegionCenter) {
+    console.log("circle", selectedRegionCenter)
+    pois = await processCircleRegion(selectedRegionCenter.split(',').map(parseFloat), selectedCircleRadiusKilometers)
     if (selectedFeatureId) {
       // get some user input to avoid the error: `Autoplay is only allowed when approved by the user, the site is activated by the user, or media is muted.`
       // The play method is not allowed by the user agent or the platform in the current context, possibly because the user denied permission.
@@ -97,7 +129,7 @@ async function restoreStateFromUrl() {
 }
 
 
-async function fetchPoisForAreaID(selectedRegionId: number): Promise<FeatureCollection> {
+async function processOSMAreaRegionID(selectedRegionId: number): Promise<FeatureCollection> {
   const area = await fetchNominatimRelationData(selectedRegionId);
   boundingBox = area.bbox;
   if (boundingBox) {
@@ -105,6 +137,18 @@ async function fetchPoisForAreaID(selectedRegionId: number): Promise<FeatureColl
   }
   const pois = await processArea(area);
   return pois;
+}
+
+async function processCircleRegion(center: number[], radiusKilometers: number): Promise<FeatureCollection> {
+  const area = circle(center, radiusKilometers)
+  const fullBoundingBox = bbox(area);
+  boundingBox = [fullBoundingBox[0], fullBoundingBox[1], fullBoundingBox[2], fullBoundingBox[3]];
+  if (boundingBox) {
+    recenterMapOnRegion();
+  }
+  const pois = await processCircle(area, center, radiusKilometers)
+  return pois;
+
 }
 
 async function fetchPoisForCurrentArea(): Promise<FeatureCollection> {
@@ -127,6 +171,14 @@ export function resetselectedFeature() {
   selectedFeatureId = null;
 }
 
+export function resetselectedCircle() {
+  selectedRegionCenter = null;
+}
+
+export function resetSelectedRegion() {
+  selectedRegionId = null;
+  selectedRegionCenter = null;
+}
 export function recenterMapOnRegion() {
   if (!boundingBox) {
     console.error('No bounding box found for the selected region');
@@ -227,13 +279,14 @@ geocoderControl.on('result', async (event: any) => {
   hideSpinButton();
   clearBoundary();
   clearPoints();
+  resetSelectedRegion()
   selectedRegionId = event.result.properties.osm_id;
-  resetselectedFeature();
   updateUrlWithState();
   processArea(event.result);
   showSpinButton();
 });
 
+// TODO: annotate this better.
 async function processArea(carmen: any): Promise<FeatureCollection<Geometry, GeoJsonProperties>> {
   hideAllContainers()
   console.log('Processing area:', carmen.place_name);
@@ -262,6 +315,18 @@ async function processArea(carmen: any): Promise<FeatureCollection<Geometry, Geo
   return pois;
 }
 
+
+async function processCircle(circle: Feature, center: number[], radiusKilometers: number): Promise<FeatureCollection<Geometry, GeoJsonProperties>> {
+  hideAllContainers()
+  console.log('Processing circle:', center, radiusKilometers);
+  displayBoundaryOnMap(circle.geometry)
+  selectedRegionFeature = circle
+  console.log('Fetching pois for category:', selectedCategory, categories[selectedCategory].emoji);
+  pois = await fetchPoisInCircle(center, radiusKilometers, selectedCategory)
+  displayPointsOnMap(pois);
+  return pois;
+}
+
 async function loadingPoisInRealtion(relationID: string, category: Category) {
   // show loading spinner
 
@@ -277,6 +342,22 @@ map.addControl(new FAQControl(), "bottom-right");
 map.addControl(shareControl, "bottom-right");
 const filterControl = new FilterControl(categories);
 map.addControl(filterControl, "bottom-right");
+const geolocateControl = new GeolocateControl({
+  positionOptions: { enableHighAccuracy: true },
+  showAccuracyCircle: false
+})
+map.addControl(geolocateControl, "bottom-right");
+geolocateControl.on('geolocate', async (position) => {
+  resetSelectedRegion()
+  console.log('A geolocate event has occurred.')
+  const center = [position.coords.longitude, position.coords.latitude]
+  console.log('Processing circle:', center, selectedCircleRadiusKilometers);
+  selectedRegionCenter = center
+  updateUrlWithState()
+  pois = await processCircle(circle(center, selectedCircleRadiusKilometers), center, selectedCircleRadiusKilometers)
+  showSpinButton();
+});
+
 
 
 document.getElementById("spin-button")?.addEventListener("click", async () => {
@@ -514,7 +595,9 @@ export async function updateSelectedCategory(category: Category) {
   if (selectedRegionId) {
     reload()
   }
-  updateUrlWithState();
+  if (selectedRegionCenter) {
+    reloadCircle()
+  }
 }
 
 
@@ -569,6 +652,19 @@ export async function reload() {
   resetselectedFeature();
   hideAllContainers();
   pois = await fetchPoisForCurrentArea();
+  showSpinButton();
+}
+
+export async function reloadCircle() {
+  // Resets the map state and fetches new POIs based on the selectedCategory for the current region
+  console.log('Full Reloading... fetching pois for new category:', categories[selectedCategory].emoji);
+  hideSpinButton();
+  hideRevealButton();
+  clearPoints();
+  resetselectedFeature();
+  hideAllContainers();
+  console.log(selectedRegionCenter, selectedCircleRadiusKilometers)
+  pois = await processCircle(circle(selectedRegionCenter.split(',').map(parseFloat), selectedCircleRadiusKilometers), selectedRegionCenter.split(',').map(parseFloat), selectedCircleRadiusKilometers);
   showSpinButton();
 }
 

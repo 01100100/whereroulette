@@ -24,7 +24,7 @@
 - [x] Add url parsing for sharing.
 - [] Add link to directions with OSM
 - [x] Add a results-info component.
-- [] Add other categories to filter by.
+- [x] Add other categories to filter by.
 - [x] Add close button to the info-container.
 - [] Add directions with [maplibre-gl-directions](https://maplibre.org/maplibre-gl-directions) [https://github.com/maplibre/maplibre-gl-directions](https://github.com/maplibre/maplibre-gl-directions)
 - [] Add distance.
@@ -35,7 +35,7 @@
 - [] Add call to action when there are no results in the geocoder to fix things on OSM
 - [] Add call to action when there are no results for the filter to add things to OSM
 - [] set website description based on the selected params.
-- [] Add option to get pois in a radius of current location.
+- [x] Add option to get pois in a radius of current location.
 - [] Add a control to get the current location.
 - [] Add loading spinner for when the data is being fetched.
 - [] Fix bug when the faq control is clicked it doesn't toggle back on the info with the spin again button.
@@ -57,3 +57,4 @@
 - [] Add mapillary images for the choosen POI.
 - [] Add [lib.reviews](https://lib.reviews/faq)
 - [] Add way to mute the sound.
+- [] Update GeoControl to track user location on mobile devices.
