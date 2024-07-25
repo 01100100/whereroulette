@@ -325,6 +325,39 @@ export function showResults(feature: Feature<Geometry, GeoJsonProperties>) {
   `;
   resultsContainer.appendChild(featureDetails);
 
+  const shareButton = document.createElement("button");
+  shareButton.id = "share-button";
+  shareButton.className = "share-button";
+  shareButton.innerHTML = "Share";
+  shareButton.onclick = () => {
+    // TODO: refactor this and consolidate the functionality from the shareControl
+    const currentUrl = window.location.href;
+    if (navigator.share) {
+      navigator
+        .share({
+          title: "Spin the wheel!",
+          url: currentUrl,
+          text: `Let's meet at ${featureName} ${featureEmoji}!❤️‍🔥`,
+        })
+        .then(() => {
+          console.log("Shared!");
+        })
+        .catch(console.error);
+    } else {
+      navigator.clipboard
+        .writeText(currentUrl)
+        .then(() => {
+          console.log("Url copied to clipboard: " + currentUrl);
+          flashMessage(`Url Copied to clipboard! 🪩 <a href="${currentUrl}" target="_blank">${currentUrl}</a>`)
+        })
+        .catch((err) => {
+          console.error("Unable to copy URL to clipboard", err);
+        });
+    }
+
+  };
+  resultsContainer.appendChild(shareButton)
+
   const spinAgainButton = document.createElement("button");
   spinAgainButton.id = "spin-button";
   spinAgainButton.className = "spin-again-button";
@@ -334,15 +367,6 @@ export function showResults(feature: Feature<Geometry, GeoJsonProperties>) {
   };
   resultsContainer.appendChild(spinAgainButton);
 
-
-  // TODO: add share and directions buttons
-  const shareButton = document.createElement("button");
-  shareButton.id = "share-button";
-  shareButton.className = "share-button";
-  shareButton.innerHTML = "Share";
-  shareButton.onclick = () => {
-
-  };
 
 
   const mapContainer = document.getElementById("map");
