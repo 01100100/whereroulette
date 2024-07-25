@@ -35,6 +35,7 @@
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.5.2",
     "@fortawesome/free-solid-svg-icons": "^6.5.2",
+    "@maplibre/maplibre-gl-directions": "^0.7.0",
     "@maplibre/maplibre-gl-geocoder": "^1.5.0",
     "@tsparticles/confetti": "^3.5.0",
     "@turf/bbox": "^7.0.0",
