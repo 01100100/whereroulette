@@ -7,6 +7,7 @@ import { fetchNominatimRelationData, fetchPoisInCircle, fetchPoisInRelation } fr
 import { confetti } from "@tsparticles/confetti"
 import { circle } from "@turf/circle"
 import bbox from "@turf/bbox";
+import MapLibreGlDirections, { LoadingIndicatorControl } from "@maplibre/maplibre-gl-directions";
 
 export enum Category {
   Drinks = "drinks",
@@ -23,6 +24,7 @@ export type CategoryDetail = {
 
 
 let selectedFeatureId: string | null = null;
+let selectedFeature: Feature | null;
 let selectedRegionId: string | null = null;
 let selectedRegionCenter: any | string | null;
 const selectedCircleRadiusKilometers = 3;
@@ -97,6 +99,7 @@ async function restoreStateFromUrl() {
       // check if feature is not in pois
       const feature = pois.features.find(feature => feature.properties?.id === selectedFeatureId);
       if (feature) {
+        selectedFeature = feature
         showRevealButton()
       } else {
         console.error('Feature not found in POIs:', selectedFeatureId);
@@ -117,6 +120,7 @@ async function restoreStateFromUrl() {
       // check if feature is not in pois
       const feature = pois.features.find(feature => feature.properties?.id === selectedFeatureId);
       if (feature) {
+        selectedFeature = feature
         showRevealButton()
       } else {
         console.error('Feature not found in POIs:', selectedFeatureId);
@@ -169,6 +173,7 @@ async function fetchPoisForCurrentArea(): Promise<FeatureCollection> {
 
 export function resetselectedFeature() {
   selectedFeatureId = null;
+  selectedFeature = null;
 }
 
 export function resetselectedCircle() {
@@ -368,11 +373,11 @@ document.getElementById("spin-button")?.addEventListener("click", async () => {
     return;
   }
   hideSpinButton();
-  const selectedPOI = await spinTheWheel(pois);
-  selectedFeatureId = selectedPOI.properties?.id;
+  selectedFeature = await spinTheWheel(pois);
+  selectedFeatureId = selectedFeature.properties?.id;
   updateUrlWithState();
-  reveal(selectedPOI)
-  console.log('Selected POI:', selectedPOI?.properties?.name);
+  reveal(selectedFeature)
+  console.log('Selected POI:', selectedFeature?.properties?.name);
 })
 
 document.getElementById("reveal-button")?.addEventListener("click", async () => {
@@ -385,9 +390,9 @@ document.getElementById("reveal-button")?.addEventListener("click", async () => 
     return;
   }
   hideRevealButton();
-  const selectedPOI = await spinTheRiggedWheel(selectedFeatureId, pois);
-  reveal(selectedPOI)
-  console.log('Selected POI:', selectedPOI.properties?.name);
+  selectedFeature = await spinTheRiggedWheel(selectedFeatureId, pois);
+  reveal(selectedFeature)
+  console.log('Selected POI:', selectedFeature.properties?.name);
 })
 
 document.getElementById("info-close-button")?.addEventListener("click", async () => {
@@ -688,6 +693,23 @@ async function reveal(selectedFeature: Feature<Geometry, GeoJsonProperties>): Pr
     });
   }
 }
+
+export function showDirections() {
+  const directions = new MapLibreGlDirections(map);
+  map.addControl(new LoadingIndicatorControl(directions));
+  if (selectedFeature && selectedFeature.geometry.type === 'Point') { // Type guard for Point geometry
+    const destination = selectedFeature.geometry;
+    console.log(destination);
+    navigator.geolocation.getCurrentPosition((position) => {
+      directions.setWaypoints([destination.coordinates as [number, number], [position.coords.longitude, position.coords.latitude]]);
+    });
+  } else {
+    // Handle other geometry types or log an error/warning
+    console.error("Selected feature does not have a 'Point' geometry type.");
+  }
+}
+
+
 
 
 function beep() {
