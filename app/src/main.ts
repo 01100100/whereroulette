@@ -31,6 +31,7 @@ const selectedCircleRadiusKilometers = 3;
 let selectedRegionFeature: Feature | null = null;
 let boundingBox: [number, number, number, number] | null = null;
 let selectedCategory: Category = Category.Drinks; // default selectedCategory is drinks
+let directions: MapLibreGlDirections;
 
 export const categories: Record<Category, CategoryDetail> = {
   [Category.Drinks]: { tag: 'amenity~"^(pub|bar|biergarten)$"', emoji: "🍺" },
@@ -277,6 +278,8 @@ const geocoderControl = new MaplibreGeocoder(geocoderApi,
 // wait for map to load first
 map.on('load', () => {
   restoreStateFromUrl()
+  directions = new MapLibreGlDirections(map);
+  map.addControl(new LoadingIndicatorControl(directions))
 })
 
 geocoderControl.on('result', async (event: any) => {
@@ -293,7 +296,8 @@ geocoderControl.on('result', async (event: any) => {
 
 // TODO: annotate this better.
 async function processArea(carmen: any): Promise<FeatureCollection<Geometry, GeoJsonProperties>> {
-  hideAllContainers()
+  hideAllContainers();
+  removeDirections();
   console.log('Processing area:', carmen.place_name);
   // result geo could be a point, polygon, or multiline polygon.
   // In this first version, we will only handle polygons and log the rest... #MVP
@@ -322,7 +326,8 @@ async function processArea(carmen: any): Promise<FeatureCollection<Geometry, Geo
 
 
 async function processCircle(circle: Feature, center: number[], radiusKilometers: number): Promise<FeatureCollection<Geometry, GeoJsonProperties>> {
-  hideAllContainers()
+  hideAllContainers();
+  removeDirections();
   console.log('Processing circle:', center, radiusKilometers);
   const fullBoundingBox = bbox(circle);
   boundingBox = [fullBoundingBox[0], fullBoundingBox[1], fullBoundingBox[2], fullBoundingBox[3]];
@@ -641,6 +646,7 @@ function celebrate() {
 export function resetSpin() {
   // Resets the map state to spin the wheel again for the current region
   console.log('Reloading the wheel ready to spin again... 🔄');
+  removeDirections();
   hideSpinButton();
   hideRevealButton();
   resetselectedFeature();
@@ -653,6 +659,7 @@ export function resetSpin() {
 export async function reload() {
   // Resets the map state and fetches new POIs based on the selectedCategory for the current region
   console.log('Full Reloading... fetching pois for new category:', categories[selectedCategory].emoji);
+  removeDirections();
   hideSpinButton();
   hideRevealButton();
   clearPoints();
@@ -665,6 +672,7 @@ export async function reload() {
 export async function reloadCircle() {
   // Resets the map state and fetches new POIs based on the selectedCategory for the current region
   console.log('Full Reloading... fetching pois for new category:', categories[selectedCategory].emoji);
+  removeDirections();
   hideSpinButton();
   hideRevealButton();
   clearPoints();
@@ -695,11 +703,8 @@ async function reveal(selectedFeature: Feature<Geometry, GeoJsonProperties>): Pr
 }
 
 export function showDirections() {
-  const directions = new MapLibreGlDirections(map);
-  map.addControl(new LoadingIndicatorControl(directions));
-  if (selectedFeature && selectedFeature.geometry.type === 'Point') { // Type guard for Point geometry
+  if (selectedFeature && selectedFeature.geometry.type === 'Point') {
     const destination = selectedFeature.geometry;
-    console.log(destination);
     navigator.geolocation.getCurrentPosition((position) => {
       directions.setWaypoints([destination.coordinates as [number, number], [position.coords.longitude, position.coords.latitude]]);
     });
@@ -709,6 +714,11 @@ export function showDirections() {
   }
 }
 
+function removeDirections() {
+  if (directions) {
+    directions.clear();
+  }
+}
 
 
 
