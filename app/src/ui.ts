@@ -1,11 +1,11 @@
 import { library, icon } from "@fortawesome/fontawesome-svg-core";
-import { faQuestion, faShareNodes, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faGlobe, faLocationDot, faQuestion, faShareNodes, faSpinner, faLink, faClock } from "@fortawesome/free-solid-svg-icons";
 import maplibregl from "maplibre-gl";
 import { Feature, Geometry, GeoJsonProperties } from "geojson";
 import { updateSelectedCategory, resetSpin, Category, CategoryDetail, showDirections } from "./main";
 
 // register the icons with the library for future use
-library.add(faQuestion, faShareNodes, faSpinner);
+library.add(faQuestion, faShareNodes, faSpinner, faGlobe, faLocationDot, faClock, faLink);
 
 // state variable to keep track of which container is currently displayed
 export let currentlyDisplayedContainer: "faq" | "info" | "results" | null = "info";
@@ -316,12 +316,12 @@ export function showResults(feature: Feature<Geometry, GeoJsonProperties>) {
   featureDetails.className = "feature-details";
   featureDetails.innerHTML = `
     <h2>${featureName}</h2>
-    <p>Type: ${featureType} ${featureEmoji}</p>
+    <p>${icon({ prefix: 'fas', iconName: 'location-dot' }).html} ${featureType} ${featureEmoji}</p>
     `
-    + (featureOpeningHours ? `<p>Opening Hours: ${featureOpeningHours}</p>` : "")
-    + (featureWebsite ? `<p>Website: <a href="${featureWebsite}" target="_blank">${featureWebsite}</a></p>` : "")
+    + (featureOpeningHours ? `<p>${icon({ prefix: 'fas', iconName: 'clock' }).html} ${featureOpeningHours}</p>` : "")
+    + (featureWebsite ? `<p>${icon({ prefix: 'fas', iconName: 'globe' }).html} <a href="${featureWebsite}" target="_blank">${featureWebsite}</a></p>` : "")
     + `
-    <p>OSM: <a href="https://www.openstreetmap.org/${featureId}" target="_blank">https://www.openstreetmap.org/${featureId}</a></p>
+    <p>${icon({ prefix: 'fas', iconName: 'link' }).html} <a href="https://www.openstreetmap.org/${featureId}" target="_blank">https://www.openstreetmap.org/${featureId}</a></p>
   `;
   resultsContainer.appendChild(featureDetails);
 
