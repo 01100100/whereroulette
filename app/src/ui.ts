@@ -307,6 +307,9 @@ export function showResults(feature: Feature<Geometry, GeoJsonProperties>) {
   }
   if (featureType) {
     featureEmoji = emojiMap[featureType];
+    featureType = featureType.split('_')
+                             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                             .join(' ');
   }
   console.log(featureProperties)
   const featureWebsite = featureProperties.website;
@@ -321,7 +324,7 @@ export function showResults(feature: Feature<Geometry, GeoJsonProperties>) {
     + (featureOpeningHours ? `<p>${icon({ prefix: 'fas', iconName: 'clock' }).html} ${featureOpeningHours}</p>` : "")
     + (featureWebsite ? `<p>${icon({ prefix: 'fas', iconName: 'globe' }).html} <a href="${featureWebsite}" target="_blank">${featureWebsite}</a></p>` : "")
     + `
-    <p>${icon({ prefix: 'fas', iconName: 'link' }).html} <a href="https://www.openstreetmap.org/${featureId}" target="_blank">https://www.openstreetmap.org/${featureId}</a></p>
+    <p>${icon({ prefix: 'fas', iconName: 'link' }).html} <a href="https://www.openstreetmap.org/${featureId}" target="_blank">Open with OpenStreetMap</a></p>
   `;
   resultsContainer.appendChild(featureDetails);
 
