@@ -58,3 +58,5 @@
 - [] Add [lib.reviews](https://lib.reviews/faq)
 - [] Add way to mute the sound.
 - [] Update GeoControl to track user location on mobile devices.
+- [] Add CI for deploy previews on PRs.
+- [] Add UI for setting directions profile.

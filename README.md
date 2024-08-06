@@ -30,7 +30,8 @@ WhereRoulette uses several external libraries and resources:
 
 - **[Nominatim](https://nominatim.openstreetmap.org/ui/about.html)** for geocoding
 - **[Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API)** for serving OpenStreetMap data
-- **[maplibregl](https://maplibre.org/)** for rendering interactive maps
+- **[Maplibre-gl](https://maplibre.org/)** for rendering interactive maps
+- **[Maplibre-gl-directions](https://maplibre.org/maplibre-gl-directions)** for directions
 - **[osmtogeojson](https://github.com/tyrasd/osmtogeojson)** for converting OpenStreetMap data to GeoJSON
 - **[FontAwesome](https://fontawesome.com/)** for icons
 - **[Webpack](https://webpack.js.org/)** for bundling assets

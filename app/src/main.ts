@@ -706,8 +706,17 @@ export function showDirections() {
   if (selectedFeature && selectedFeature.geometry.type === 'Point') {
     const destination = selectedFeature.geometry;
     navigator.geolocation.getCurrentPosition((position) => {
-      directions.setWaypoints([destination.coordinates as [number, number], [position.coords.longitude, position.coords.latitude]]);
-    });
+      // TODO: provide a UI for setting different profiles.
+      const profiles: string[] = [
+        "foot",
+        // "bike",
+        // "car"
+      ];
+      directions.setWaypoints(
+        [destination.coordinates as [number, number], [position.coords.longitude, position.coords.latitude]],
+        profiles
+    );
+  });
   } else {
     // Handle other geometry types or log an error/warning
     console.error("Selected feature does not have a 'Point' geometry type.");
