@@ -2,7 +2,7 @@
 
 **[https://whereroulette.com](https://whereroulette.com)**
 
-<!-- ![Screenshot](app/src/assets/screenshot.png) -->
+![Screenshot](app/src/assets/logo.png)
 
 WhereRoulette is a web application designed to randomly select a [point of interest](https://wiki.openstreetmap.org/wiki/Points_of_interest) (POI) within a specified area. This tool solves the problem of choosing a place to go when you need somewhere to meet with friends, but the specific location isn't that important.
 
@@ -76,13 +76,24 @@ The site is hosted using [GitHub Pages](https://pages.github.com/). A GitHub act
 
 The site gets deployed to [https://whereroulette.com](https://whereroulette.com).
 
+### Analytics
 
-## Analytics
+The site uses [Umami](https://umami.is/) for privacy-focused analytics.
 
-The site uses [Umami](https://umami.is/) for privacy-focused analytics. This requires the script `src/assets/analytics.js` to be included in the distributed bundle.
+An instance is hosted on [fly.io](https://fly.io). The configuration is defined in the [analytics](https://github.com/01100100/analytics) repository.
+
+A DNS record is set up such that the `stats.whereroulette.com` subdomain points to the Umami instance.
+
+The analytics script is available at [https://stats.whereroulette.com/script.js](https://stats.whereroulette.com/script.js), which is downloaded and stored in this repository in `src/assets/analytics.js`.
+
+Webpack is configured to include the analytics script in the build and it is used in the `index.html` file.
 
 To update the script, run the following command:
 
 ```bash
-curl https://umani.fly.dev/script.js -o src/assets/analytics.js
+curl https://stats.whereroulette.com/script.js -o src/assets/analytics.js
 ```
+
+## Shoutouts
+
+Thanks to Casper Ashdown ([github.com/surelybassy](https://github.com/surelybassy)) for creating a amazing logo!
