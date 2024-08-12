@@ -56,7 +56,9 @@
 - [] Add more filtering options (eg: cuisine...)
 - [] Add mapillary images for the choosen POI.
 - [] Add [lib.reviews](https://lib.reviews/faq)
-- [] Add way to mute the sound.
+- [] Add way to mute the sound. (THE COMMUNITY HAVE SPOKEN OUT!!!) !IMPORTANT!
 - [] Update GeoControl to track user location on mobile devices.
-- [] Add CI for deploy previews on PRs.
+- [x] Add CI for deploy previews on PRs.
 - [] Add UI for setting directions profile.
+- [] Add internationalization [https://www.i18next.com/](https://www.i18next.com/).
+- [] Change UI so the landing page gives three options `Region`, `Near by`, `Plan with Freinds!`
