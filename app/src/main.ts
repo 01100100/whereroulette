@@ -27,7 +27,7 @@ let selectedFeatureId: string | null = null;
 let selectedFeature: Feature | null;
 let selectedRegionId: string | null = null;
 let selectedRegionCenter: any | string | null;
-const selectedCircleRadiusKilometers = 1;
+const selectedCircleRadiusKilometers = 0.25;
 let selectedRegionFeature: Feature | null = null;
 let boundingBox: [number, number, number, number] | null = null;
 let selectedCategory: Category = Category.Drinks; // default selectedCategory is drinks
