@@ -68,6 +68,98 @@ npm install
 npm run build
 ```
 
+## API 🚀
+
+WhereRoulette provides a simple API using Netlify Edge Functions to retrieve POIs within a specified region. Mix some randomness into your apps or get details about specific locations! ✨
+
+### POI Endpoint ⚡
+
+```bash
+GET https://whereroulette.com/api
+```
+
+#### Query Parameters 🔍
+
+| Parameter | Description | Required | Default |
+|-----------|-------------|----------|---------|
+| region    | OpenStreetMap region ID | Yes | - |
+| type      | POI category (drinks, cafe, food, park, climb) | No | drinks |
+| id        | Specific OSM node ID (e.g., "node/11967421222" or just "11967421222") | No | - |
+
+#### Usage Examples 📝
+
+**Random POI:**
+
+```bash
+https://whereroulette.com/api?region=62422&type=climb
+```
+
+**Specific POI by ID:**
+
+```bash
+https://whereroulette.com/api?region=62422&type=climb&id=node%2F11967421222
+```
+
+#### Response Example 💾
+
+```json
+{
+  "osm_node": "11967421222",
+  "name": "Bouldergarten",
+  "type": "climb",
+  "emoji": "🧗",
+  "opening_hours": "Mo-Fr 10:00-23:00, Sa,Su 10:00-22:00",
+  "url": "https://whereroulette.com/?region=62422&type=climb&id=node%2F11967421222",
+  "coordinates": [13.4567, 52.4890]
+}
+```
+
+#### Error Responses ⚠️
+
+**Missing Region:**
+
+```json
+{
+  "error": "Missing required parameter: region"
+}
+```
+
+**Invalid Category:**
+
+```json
+{
+  "error": "Invalid type. Must be one of: drinks, cafe, food, park, climb"
+}
+```
+
+**No POIs Found:**
+
+```json
+{
+  "error": "No climb found in region 62422"
+}
+```
+
+**Node Not Found:**
+
+```json
+{
+  "error": "Node with ID node/12345678 not found"
+}
+```
+
+### Technical Implementation 🛠️
+
+The API is implemented as a Netlify Edge Function, which provides fast, globally distributed response times. It directly queries the Overpass API to fetch OpenStreetMap data and converts it to a simplified format optimized for POI information.
+
+The configuration in `netlify.toml` maps the `/api` path to the Edge Function:
+
+```toml
+[[edge_functions]]
+function = "json"
+path = "/api"
+```
+
 ## Deployment
 
 ### Frontend - GitHub Pages

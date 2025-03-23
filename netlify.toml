@@ -1,0 +1,9 @@
+[build]
+base = ""
+command = "cd app && npm install && npm run build"
+publish = "app/dist"
+edge_functions = "netlify/edge-functions"
+
+[[edge_functions]]
+function = "choose"
+path = "/api"

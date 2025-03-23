@@ -1,33 +1,28 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const FaviconsWebpackPlugin = require('favicons-webpack-plugin')
+const FaviconsWebpackPlugin = require('favicons-webpack-plugin');
 const path = require('path');
 
 module.exports = {
   mode: 'development',
-  devtool: 'inline-source-map',
-  devServer: {
-    static: './dist',
-  },
-  optimization: {
-    runtimeChunk: 'single',
-  },
-  entry: { main: './src/main.ts' },
+  entry: './src/main.ts',
   module: {
     rules: [
       {
-        test: /\.ts?$/,
+        test: /\.tsx?$/,
         use: 'ts-loader',
-        exclude: [/node_modules/, /\.test\.ts$/],
+        exclude: [
+          /node_modules/,
+          /netlify[\\/]edge-functions/ // This is the important line to exclude edge functions
+        ]
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader']
       },
       {
         test: /\.(png|jpe?g|gif|svg)$/i,
         type: 'asset/resource'
-      },
-      {
-        test: /\.css$/i,
-        use: ['style-loader', 'css-loader'],
-        exclude: /input\.css$/,
       },
       {
         test: /\.md$/,
@@ -43,12 +38,15 @@ module.exports = {
           },
         ],
       },
-    ],
+    ]
   },
   resolve: {
-    extensions: ['.tsx', '.ts', '.js'],
+    extensions: ['.tsx', '.ts', '.js']
   },
-  node: { global: true },
+  output: {
+    filename: '[name].bundle.js',
+    path: path.resolve(__dirname, 'dist')
+  },
   plugins: [
     new HtmlWebpackPlugin({
       template: './src/index.html',
@@ -61,8 +59,7 @@ module.exports = {
     }),
     new FaviconsWebpackPlugin('./src/assets/logo.png')
   ],
-  output: {
-    filename: '[name].bundle.js',
-    path: path.resolve(__dirname, 'dist'),
-  },
+  optimization: {
+    runtimeChunk: 'single'
+  }
 };
